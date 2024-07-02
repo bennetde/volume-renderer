@@ -5,6 +5,15 @@ struct CameraUniform {
     inverse_view_proj: mat4x4<f32>
 }
 
+struct Voxel {
+    position: vec3<f32>,
+    radius: f32
+}
+
+struct VoxelGrid {
+    dimensions: vec3<u32>
+}
+
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
@@ -19,6 +28,7 @@ struct RayMarchOutput {
     hit: bool,
     color: vec3<f32>,
     distance: f32,
+    steps: u32,
     min_distance_to_scene: f32,
 }
 
@@ -36,6 +46,13 @@ fn vs_main(
 @group(0) @binding(0)
 var<uniform> camera: CameraUniform;
 
+@group(1) @binding(1)
+var<storage, read> voxels: array<Voxel>;
+
+@group(1) @binding(0)
+var<uniform> voxel_grid: VoxelGrid;
+
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // return textureSample(t_diffuse, s_diffuse, in.tex_coords);
@@ -47,18 +64,19 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let raymarch_result = raymarch(ro, dir);
 
-    if raymarch_result.hit {
-        return vec4<f32>(raymarch_result.color, 1.0);
-    } else {
-        return vec4<f32>(vec3<f32>(raymarch_result.min_distance_to_scene), 1.0);
-    }
+    // if raymarch_result.hit {
+    //     return vec4<f32>(raymarch_result.color, 1.0);
+    // } else {
+    //     return vec4<f32>(vec3<f32>(raymarch_result.min_distance_to_scene), 1.0);
+    // }
+    return vec4<f32>(vec3<f32>(f32(raymarch_result.steps) / 20.0), 1.0);
 }
 
 fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     var dt = 0.0;
     var output: RayMarchOutput = RayMarchOutput();
     output.min_distance_to_scene = 10000.0;
-        for(var i = 0; i < 100; i += 1) {
+        for(var i = 0; i < 20; i += 1) {
         let p: vec3<f32> = ro + rd * dt;
         let distance = scene(p);
 
@@ -77,14 +95,21 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         }
 
         dt += distance;
+        output.steps = output.steps + 1;
     }
     output.distance = dt;
     return output;
 }
 
 fn scene(p: vec3<f32>) -> f32 {
-    let distance = sphere_distance(p, 1.0);
+    var distance = 10000.0;
+    let length: u32 = arrayLength(&voxels);
+    for(var i: u32 = 0; i < 20 * 20 * 20; i++) {
+        // distance = min(sphere_distance(p - voxels[i].position, voxels[i].radius), distance);
+        distance = min(sphere_distance(p, 1.0), distance);
+    }
     return distance;
+    // return sphere_distance(p, 1.0);
 }
 
 fn sphere_distance(ray_pos: vec3<f32>, radius: f32) -> f32 {

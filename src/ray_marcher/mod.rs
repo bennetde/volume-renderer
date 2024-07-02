@@ -26,7 +26,7 @@ impl RayMarcher {
     pub fn new(device: &Device, config: &SurfaceConfiguration, camera_bind_group: Rc<BindGroup>) -> Self {
         
         let shader = device.create_shader_module(wgpu::include_wgsl!("raymarcher.wgsl"));
-        let voxel_grid = VoxelGrid::new(UVec3::new(10,10,10), &device);
+        let voxel_grid = VoxelGrid::new(UVec3::new(3,1,1), &device);
 
         // --- UNIFORMS ---
         let camera_bind_group_layout = device.create_bind_group_layout(
@@ -52,7 +52,7 @@ impl RayMarcher {
             label: Some("Raymarching Render Pipeline Layout"),
             bind_group_layouts: &[
                 &camera_bind_group_layout,
-                &voxel_grid.bind_group_layout
+                &voxel_grid.voxels_bind_group_layout
             ],
             push_constant_ranges: &[],
         });
@@ -126,7 +126,7 @@ impl RayMarcher {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
-        render_pass.set_bind_group(1, &self.voxel_grid.bind_group, &[]);
+        render_pass.set_bind_group(1, &self.voxel_grid.voxels_bind_group, &[]);
         render_pass.draw_model(&self.screen_model);
 
         drop(render_pass);
