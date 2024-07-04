@@ -51,10 +51,14 @@ impl<'a> State<'a> {
             },
         ).await.unwrap();
 
+        let mut limits = wgpu::Limits::default();
+        limits.max_buffer_size = 536870912;
+        limits.max_storage_buffer_binding_size = 536870912;
+
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
                 required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
+                required_limits: limits,
                 label: None
             },
             None
