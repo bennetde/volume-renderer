@@ -14,7 +14,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(aspect_ratio: f32) -> Camera {
         Camera {
-            transform: Transform::default().move_pos(Vec3::new(0.0, 0.0, 5.0)),
+            transform: Transform::default().move_pos(Vec3::new(0.0, 0.0, -5.0)),
             target: Vec3::ZERO,
             aspect: aspect_ratio,
             fovy: 45.0,
