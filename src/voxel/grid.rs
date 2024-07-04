@@ -1,4 +1,4 @@
-use glam::{UVec3, Vec3};
+use glam::{UVec3, Vec3, Vec4};
 use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, ShaderStages};
 
 use super::voxel::Voxel;
@@ -14,7 +14,9 @@ pub struct VoxelGrid {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct VoxelGridUniform {
-    dimensions: [u32; 3]
+    dimensions: [u32; 3],
+    // Buffer is needed for byte alignment in wgsl and has no further use
+    buffer: u32,
 }
 
 impl VoxelGrid {
@@ -47,8 +49,14 @@ impl VoxelGrid {
         });
 
         let mut voxels: Vec<Voxel> = vec![Voxel::default(); dimensions.x as usize * dimensions.y as usize * dimensions.z as usize];
-        voxels[1].set_position(Vec3::new(1.0, 0.0, 0.0));
-        voxels[2].set_position(Vec3::new(-2.0, 2.0, 0.0));
+        voxels[0].set_color(Vec4::new(0.0, 0.0, 0.0, 1.0));
+        voxels[1].set_color(Vec4::new(0.0, 0.0, 1.0, 1.0));
+        voxels[2].set_color(Vec4::new(0.0, 1.0, 0.0, 1.0));
+        voxels[3].set_color(Vec4::new(0.0, 1.0, 1.0, 1.0));
+        voxels[4].set_color(Vec4::new(1.0, 0.0, 0.0, 1.0));
+        voxels[5].set_color(Vec4::new(1.0, 0.0, 1.0, 1.0));
+        voxels[6].set_color(Vec4::new(1.0, 1.0, 0.0, 1.0));
+        voxels[7].set_color(Vec4::new(1.0, 1.0, 1.0, 1.0));
 
 
         let voxels_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -105,7 +113,8 @@ impl VoxelGrid {
 impl VoxelGridUniform {
     pub fn new(dimensions: UVec3) -> Self {
         Self {
-            dimensions: dimensions.to_array()
+            dimensions: dimensions.to_array(),
+            buffer: 0,
         }
     }
 }

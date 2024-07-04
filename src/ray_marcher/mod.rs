@@ -26,7 +26,7 @@ impl RayMarcher {
     pub fn new(device: &Device, config: &SurfaceConfiguration, camera_bind_group: Rc<BindGroup>) -> Self {
         
         let shader = device.create_shader_module(wgpu::include_wgsl!("raymarcher.wgsl"));
-        let voxel_grid = VoxelGrid::new(UVec3::new(3,1,1), &device);
+        let voxel_grid = VoxelGrid::new(UVec3::new(200,200,200), &device);
 
         // --- UNIFORMS ---
         let camera_bind_group_layout = device.create_bind_group_layout(
