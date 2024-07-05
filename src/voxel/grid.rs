@@ -1,12 +1,12 @@
 use std::ops::{Index, IndexMut};
 
 use glam::{UVec3, Vec3, Vec4};
-use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, ShaderStages};
+use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferAddress, BufferUsages, Device, Queue, ShaderStages};
 
-use super::voxel::Voxel;
+use super::{init::perlin::init_grid_buffer_perlin, voxel::Voxel};
 pub struct VoxelGrid {
     voxels: Vec<Voxel>,
-    dimensions: UVec3,
+    pub dimensions: UVec3,
     voxels_buffer: wgpu::Buffer,
     pub voxels_bind_group_layout: BindGroupLayout,
     pub voxels_bind_group: BindGroup,
@@ -51,14 +51,6 @@ impl VoxelGrid {
         });
 
         let mut voxels: Vec<Voxel> = vec![Voxel::default(); dimensions.x as usize * dimensions.y as usize * dimensions.z as usize];
-        voxels[0].set_color(Vec4::new(0.0, 0.0, 0.0, 1.0));
-        voxels[1].set_color(Vec4::new(0.0, 0.0, 1.0, 1.0));
-        voxels[2].set_color(Vec4::new(0.0, 1.0, 0.0, 1.0));
-        voxels[3].set_color(Vec4::new(0.0, 1.0, 1.0, 1.0));
-        voxels[4].set_color(Vec4::new(1.0, 0.0, 0.0, 1.0));
-        voxels[5].set_color(Vec4::new(1.0, 0.0, 1.0, 1.0));
-        voxels[6].set_color(Vec4::new(1.0, 1.0, 0.0, 1.0));
-        voxels[7].set_color(Vec4::new(1.0, 1.0, 1.0, 1.0));
 
 
         let voxels_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -121,6 +113,10 @@ impl VoxelGrid {
             panic!("Tried to access grid outside array")
         }
         return (position.x + self.dimensions.x * (position.y + (self.dimensions.y) * position.z)) as usize;
+    }
+
+    pub fn update_buffer(&self, queue: &Queue) {
+        queue.write_buffer(&self.voxels_buffer, 0, bytemuck::cast_slice(&self.voxels));
     }
 }
 

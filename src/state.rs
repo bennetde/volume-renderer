@@ -246,7 +246,7 @@ impl<'a> State<'a> {
 
         let num_indices = INDICES.len() as u32;
 
-        let ray_marcher = RayMarcher::new(&device, &config, Rc::clone(&camera_bind_group));
+        let ray_marcher = RayMarcher::new(&device, &queue, &config, Rc::clone(&camera_bind_group));
 
         Self {
             window,

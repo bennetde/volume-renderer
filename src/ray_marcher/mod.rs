@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use glam::{UVec3, Vec4};
 use wgpu::{BindGroup, Color, Device, FragmentState, PrimitiveState, Queue, RenderPass, RenderPipeline, RenderPipelineDescriptor, SurfaceConfiguration, TextureView, VertexState};
-use crate::{camera, model::{DrawModel, Model}, vertex::Vertex, voxel::{self, grid::VoxelGrid, voxel::Voxel}};
+use crate::{camera, model::{DrawModel, Model}, vertex::Vertex, voxel::{self, grid::VoxelGrid, init::perlin::init_grid_buffer_perlin, voxel::Voxel}};
 
 
 const VERTICES: &[Vertex] = &[
@@ -23,11 +23,13 @@ pub struct RayMarcher {
 }
 
 impl RayMarcher {
-    pub fn new(device: &Device, config: &SurfaceConfiguration, camera_bind_group: Rc<BindGroup>) -> Self {
+    pub fn new(device: &Device, queue: &Queue, config: &SurfaceConfiguration, camera_bind_group: Rc<BindGroup>) -> Self {
         
         let shader = device.create_shader_module(wgpu::include_wgsl!("raymarcher.wgsl"));
-        let mut voxel_grid = VoxelGrid::new(UVec3::new(300,300,300), &device);
-        voxel_grid.set_color(UVec3::ZERO, Vec4::new(1.0, 0.0, 0.0, 1.0));
+        let mut voxel_grid = VoxelGrid::new(UVec3::new(100,100,100), &device);
+        // voxel_grid.set_color(UVec3::ZERO, Vec4::new(1.0, 0.0, 0.0, 1.0));
+        init_grid_buffer_perlin(&mut voxel_grid);
+        voxel_grid.update_buffer(&queue);
 
         // --- UNIFORMS ---
         let camera_bind_group_layout = device.create_bind_group_layout(
