@@ -55,11 +55,10 @@ impl Transform {
         self
     }
 
-    pub fn look_to(&mut self, pos: Vec3, up: Vec3) -> &Self {
+    pub fn look_to(&mut self, pos: Vec3, up: Vec3) {
         let d = (pos - self.position).normalize();
         let quat = Quat::from_mat4(&Mat4::look_to_rh(self.position, d, up)).conjugate();
         self.rotation = quat;
-        self
     }
 
     pub fn with_rotation(mut self, rot: Quat) -> Self {
