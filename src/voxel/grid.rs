@@ -1,3 +1,5 @@
+use std::ops::{Index, IndexMut};
+
 use glam::{UVec3, Vec3, Vec4};
 use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, ShaderStages};
 
@@ -107,6 +109,34 @@ impl VoxelGrid {
             voxels_bind_group,
             voxel_grid_buffer
         }
+    }
+
+    pub fn set_color(&mut self, position: UVec3, color: Vec4) {
+        let index = self.get_index(position);
+        self.voxels[index].set_color(color);
+    }
+    
+    fn get_index(&self, position: UVec3) -> usize {
+        if position.x >= self.dimensions.x || position.y >= self.dimensions.y || position.z >= self.dimensions.z {
+            panic!("Tried to access grid outside array")
+        }
+        return (position.x + self.dimensions.x * (position.y + (self.dimensions.y) * position.z)) as usize;
+    }
+}
+
+impl Index<UVec3> for VoxelGrid {
+    type Output = Voxel;
+
+    fn index(&self, index: UVec3) -> &Self::Output {
+        let index = self.get_index(index);
+        &self.voxels[index]
+    }
+}
+
+impl IndexMut<UVec3> for VoxelGrid { 
+    fn index_mut(&mut self, index: UVec3) -> &mut Self::Output {
+        let index = self.get_index(index);
+        &mut self.voxels[index]
     }
 }
 

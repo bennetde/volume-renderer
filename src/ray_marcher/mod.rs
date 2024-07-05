@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use glam::UVec3;
+use glam::{UVec3, Vec4};
 use wgpu::{BindGroup, Color, Device, FragmentState, PrimitiveState, Queue, RenderPass, RenderPipeline, RenderPipelineDescriptor, SurfaceConfiguration, TextureView, VertexState};
 use crate::{camera, model::{DrawModel, Model}, vertex::Vertex, voxel::{self, grid::VoxelGrid, voxel::Voxel}};
 
@@ -26,7 +26,8 @@ impl RayMarcher {
     pub fn new(device: &Device, config: &SurfaceConfiguration, camera_bind_group: Rc<BindGroup>) -> Self {
         
         let shader = device.create_shader_module(wgpu::include_wgsl!("raymarcher.wgsl"));
-        let voxel_grid = VoxelGrid::new(UVec3::new(300,300,300), &device);
+        let mut voxel_grid = VoxelGrid::new(UVec3::new(300,300,300), &device);
+        voxel_grid.set_color(UVec3::ZERO, Vec4::new(1.0, 0.0, 0.0, 1.0));
 
         // --- UNIFORMS ---
         let camera_bind_group_layout = device.create_bind_group_layout(
