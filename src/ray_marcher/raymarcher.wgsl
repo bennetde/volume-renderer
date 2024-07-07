@@ -124,7 +124,7 @@ fn scene(p: vec3<f32>) -> HitInfo {
     if voxel.alpha >= 0.5 {
         output.hit = true;
         output.distance = -1.0;
-        output.color = voxel.color;
+        output.color = fract;
     }
     return output;
 }

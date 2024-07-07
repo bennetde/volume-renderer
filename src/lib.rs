@@ -8,6 +8,8 @@ mod model;
 mod ray_marcher;
 mod voxel;
 
+use std::time::Instant;
+
 use state::State;
 use vertex::Vertex;
 use winit::{
@@ -63,14 +65,16 @@ pub async fn run() {
 
                     WindowEvent::RedrawRequested => {
                         state.window().request_redraw();
+                        let time = Instant::now();
                         state.update();
                         match state.render() {
                             Ok(_) => {}
                             Err(wgpu::SurfaceError::Lost) => state.resize(state.size()),
                             Err(wgpu::SurfaceError::OutOfMemory) => control_flow.exit(),
                             Err(e) => eprintln!("{:?}", e),
-
                         }
+                        // println!("{}ms", time.elapsed().as_millis() as f64);
+                        state.window().set_title(format!("diffdvr-voxel {}ms", time.elapsed().as_millis()).as_str());
                     }
 
                     _ => {}
