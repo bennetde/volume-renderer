@@ -1,6 +1,7 @@
 mod state;
 mod vertex;
 mod texture;
+mod texture_3d;
 mod camera;
 mod camera_controller;
 mod transform;

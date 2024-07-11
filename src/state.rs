@@ -54,6 +54,7 @@ impl<'a> State<'a> {
         let mut limits = wgpu::Limits::default();
         limits.max_buffer_size = 536870912;
         limits.max_storage_buffer_binding_size = 536870912;
+        
 
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
@@ -305,7 +306,7 @@ impl<'a> State<'a> {
 
     pub fn update(&mut self) {
         self.camera_controller.update_camera(&mut self.camera, 1.0/60.0);
-        self.camera.transform.look_to(Vec3::ONE * 50.0, Vec3::NEG_Y);
+        self.camera.transform.look_to(Vec3::ONE * 16.0, Vec3::NEG_Y);
         self.camera_uniform.update_view_proj(&mut self.camera);
         self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
     }

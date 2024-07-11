@@ -1,7 +1,9 @@
 use std::ops::{Index, IndexMut};
 
 use glam::{UVec3, Vec3, Vec4};
-use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferAddress, BufferUsages, Device, Queue, ShaderStages};
+use wgpu::{core::device::queue, util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferAddress, BufferUsages, Device, Queue, ShaderStages};
+
+use crate::texture_3d::Texture3D;
 
 use super::{init::perlin::init_grid_buffer_perlin, voxel::Voxel};
 pub struct VoxelGrid {
@@ -10,7 +12,10 @@ pub struct VoxelGrid {
     voxels_buffer: wgpu::Buffer,
     pub voxels_bind_group_layout: BindGroupLayout,
     pub voxels_bind_group: BindGroup,
-    voxel_grid_buffer: wgpu::Buffer
+    voxel_grid_buffer: wgpu::Buffer,
+    pub voxel_texture: Texture3D,
+    pub voxel_texture_bind_group_layout: BindGroupLayout,
+    pub voxel_texture_bind_group: BindGroup
 }
 
 #[repr(C)]
@@ -22,7 +27,7 @@ pub struct VoxelGridUniform {
 }
 
 impl VoxelGrid {
-    pub fn new(dimensions: UVec3, device: &Device) -> Self {
+    pub fn new(dimensions: UVec3, device: &Device, queue: &Queue) -> Self {
         let layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("voxel_grid_bind_group_layout_descriptor"),
             entries: &[
@@ -93,17 +98,63 @@ impl VoxelGrid {
             ]
         });
 
+        let texture = Texture3D::from_image(&device, &queue, bytemuck::cast_slice(&voxels), dimensions, Some("Voxel 3DTexture")).unwrap();
+
+        let voxel_texture_bind_group_layout = device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+                label: Some("voxel_texture_bind_group_layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture { 
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true }, 
+                            view_dimension: wgpu::TextureViewDimension::D3, 
+                            multisampled: false 
+                        },
+                        count: None
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None
+                    }
+                ]
+            }
+        );
+
+        let voxel_texture_bind_group = device.create_bind_group(
+            &wgpu::BindGroupDescriptor {
+                layout: &voxel_texture_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&texture.view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&texture.sampler)
+                    }
+                ],
+                label: Some("voxel_texture_bind_group")
+            }
+        );
+
         Self {
             voxels,
             dimensions,
             voxels_bind_group_layout: layout,
             voxels_buffer,
             voxels_bind_group,
-            voxel_grid_buffer
+            voxel_grid_buffer,
+            voxel_texture: texture,
+            voxel_texture_bind_group_layout,
+            voxel_texture_bind_group
         }
     }
 
-    pub fn set_color(&mut self, position: UVec3, color: Vec4) {
+    pub fn set_color(&mut self, position: UVec3, color: [u8; 4]) {
         let index = self.get_index(position);
         self.voxels[index].set_color(color);
     }
@@ -116,7 +167,29 @@ impl VoxelGrid {
     }
 
     pub fn update_buffer(&self, queue: &Queue) {
+
+        let size = wgpu::Extent3d {
+            width: self.dimensions.x,
+            height: self.dimensions.y,
+            depth_or_array_layers: self.dimensions.z,
+        };
+
         queue.write_buffer(&self.voxels_buffer, 0, bytemuck::cast_slice(&self.voxels));
+        queue.write_texture(
+            wgpu::ImageCopyTexture {
+                aspect: wgpu::TextureAspect::All,
+                texture: &self.voxel_texture.texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO
+            },
+            bytemuck::cast_slice(&self.voxels),
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(4 * self.dimensions.x),
+                rows_per_image: Some(self.dimensions.y),
+            },
+            size
+        );
     }
 }
 
