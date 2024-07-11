@@ -132,7 +132,7 @@ impl<'a> State<'a> {
         );
 
         let mut camera = Camera::new(config.width as f32 / config.height as f32);
-        let mut camera_controller = CameraController::new(5.0);
+        let mut camera_controller = CameraController::new(100.0);
 
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&mut camera);
