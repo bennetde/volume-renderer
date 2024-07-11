@@ -148,7 +148,7 @@ fn scene(p: vec3<f32>) -> HitInfo {
     if output.alpha <= 0.5 {
         output.alpha = 0.0;
     }
-    output.alpha = output.alpha / 100.0;
+    output.alpha = output.alpha / 64.0;
 
     output.hit = true;
     output.color = fract;
