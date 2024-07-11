@@ -89,7 +89,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
 
     output.min_distance_to_scene = 10000.0;
     for(var i = 0; i < 10000; i += 1) {
-        // Sample scene at the current position
+        // Calculate next position & then sample the scene at that point
         let p: vec3<f32> = ro + rd * dt;
         let hitInfo = scene(p);
 
@@ -102,7 +102,8 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
             break;
         }
 
-        dt += 0.01;
+        // Increase distance for the next sampling step
+        dt += 0.1;
         output.steps = output.steps + 1;
     }
 
@@ -147,7 +148,7 @@ fn scene(p: vec3<f32>) -> HitInfo {
     if output.alpha <= 0.5 {
         output.alpha = 0.0;
     }
-    output.alpha = output.alpha / 1000.0;
+    output.alpha = output.alpha / 100.0;
 
     output.hit = true;
     output.color = fract;
