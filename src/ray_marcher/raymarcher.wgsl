@@ -37,6 +37,12 @@ struct RayMarchOutput {
     min_distance_to_scene: f32,
 }
 
+struct AABBIntersection {
+    intersects: bool,
+    t_min: f32,
+    t_max: f32,
+}
+
 
 @vertex
 fn vs_main(
@@ -83,11 +89,20 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
 fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     var output: RayMarchOutput = RayMarchOutput();
-    var dt = 0.0;
+
     var color = vec3<f32>(1.0);
     var alpha = 0.0;
 
     output.min_distance_to_scene = 10000.0;
+
+    let aabb_intersection = aabb_intersect(ro, rd, voxel_grid.dimensions);
+    if !aabb_intersection.intersects {
+        output.color = vec3<f32>(1.0);
+        return output;
+    }
+
+    var dt = aabb_intersection.t_min;
+
     for(var i = 0; i < 10000; i += 1) {
         // Calculate next position & then sample the scene at that point
         let p: vec3<f32> = ro + rd * dt;
@@ -105,9 +120,13 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         // Increase distance for the next sampling step
         dt += 0.1;
         output.steps = output.steps + 1;
+
+        if dt >= aabb_intersection.t_max {
+            break;
+        }
     }
 
-
+    // Background color
     color = alpha * color + (1.0 - alpha) * vec3<f32>(1.0);
     alpha = alpha + (1.0 - alpha);
 
@@ -147,12 +166,73 @@ fn scene(p: vec3<f32>) -> HitInfo {
     output.alpha = sample_result.a;
     if output.alpha <= 0.5 {
         output.alpha = 0.0;
+    } else if output.alpha >= 0.9 {
+        output.alpha = 1.0;
+    } else {
+        output.alpha = output.alpha / 64.0;
     }
-    output.alpha = output.alpha / 64.0;
+
+
+    
 
     output.hit = true;
-    output.color = fract;
+    output.color = sample_result.rgb;
     return output;
+}
+
+// Adapted from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
+fn aabb_intersect(ro: vec3<f32>, rd: vec3<f32>, box_size: vec3<u32>) -> AABBIntersection {
+    var intersection = AABBIntersection();
+    let min = vec3<f32>(0.0);
+    let max = vec3<f32>(box_size);
+
+    var t_min = (min.x - ro.x) / rd.x;
+    var t_max = (max.x - ro.x) / rd.x;
+
+    if t_min > t_max {
+        let temp = t_min;
+        t_min = t_max;
+        t_max = temp;
+    }
+
+    var t_y_min = (min.y - ro.y) / rd.y;
+    var t_y_max = (max.y - ro.y) / rd.y;
+
+    if t_y_min > t_y_max {
+        let temp = t_y_min;
+        t_y_min = t_y_max;
+        t_y_max = temp;
+    }
+
+    if (t_min > t_y_max) || (t_y_min > t_max) { 
+        intersection.intersects = false;
+        return intersection;
+    }
+
+    if t_y_min > t_min { t_min = t_y_min; }
+    if t_y_max < t_max { t_max = t_y_max; }
+
+    var t_z_min = (min.z - ro.z) / rd.z;
+    var t_z_max = (max.z - ro.z) / rd.z;
+
+    if t_z_min > t_z_max {
+        let temp = t_z_min;
+        t_z_min= t_z_max;
+        t_z_max = temp;
+    }
+
+    if (t_min > t_z_max) || (t_z_min > t_max) { 
+        intersection.intersects = false;
+        return intersection;
+    }
+
+    if t_z_min > t_min { t_min = t_z_min; }
+    if t_z_max < t_max { t_max = t_z_max; }
+
+    intersection.intersects = true;
+    intersection.t_min = t_min;
+    intersection.t_max = t_max;
+    return intersection;
 }
 
 fn get_1d_index(p: vec3<i32>) -> i32{
