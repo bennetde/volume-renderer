@@ -1,9 +1,10 @@
 use std::rc::Rc;
 
+use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
 use wgpu::{util::DeviceExt, Color};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
-use crate::{camera::{self, Camera, CameraUniform}, camera_controller::{self, CameraController}, ray_marcher::{self, RayMarcher}, texture::{self, Texture}, vertex::Vertex, INDICES, VERTICES};
+use crate::{camera::{self, Camera, CameraUniform}, camera_controller::{self, CameraController}, gui::EguiRenderer, ray_marcher::{self, RayMarcher}, texture::{self, Texture}, vertex::Vertex, INDICES, VERTICES};
 
 /// Handles and stores the state of the application. 
 /// Additionally holds data needed for rendering, but this should be moved into it's own struct in the future.
@@ -15,18 +16,15 @@ pub struct State<'a> {
     size: winit::dpi::PhysicalSize<u32>,
     window: &'a Window,
     clear_color: Color,
-    render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
-    diffuse_bind_group: wgpu::BindGroup,
-    diffuse_texture: Texture,
     camera: Camera,
     camera_controller: CameraController,
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
     camera_bind_group: Rc<wgpu::BindGroup>,
-    ray_marcher: RayMarcher
+    ray_marcher: RayMarcher,
+    egui_renderer: EguiRenderer,
+
+    frametime: f64,
 }
 
 impl<'a> State<'a> {
@@ -85,54 +83,8 @@ impl<'a> State<'a> {
 
         surface.configure(&device, &config);
 
-        
-        let diffuse_bytes = include_bytes!("happy-tree.png");
-        let diffuse_texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").unwrap();
-
-
-        let texture_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: wgpu::TextureSampleType::Float { filterable: true }
-                        },
-                        count: None
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None
-                    },
-                ],
-                label: Some("texture_bind_group_layout")
-            });
-
-        
-        let diffuse_bind_group = device.create_bind_group(
-            &wgpu::BindGroupDescriptor {
-                layout: &texture_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler)
-                    }
-                ],
-                label: Some("diffuse_bind_group")
-            }
-        );
-
         let mut camera = Camera::new(config.width as f32 / config.height as f32);
-        let mut camera_controller = CameraController::new(100.0);
+        let camera_controller = CameraController::new(100.0);
 
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&mut camera);
@@ -181,73 +133,9 @@ impl<'a> State<'a> {
             a: 1.0,
         };
 
-        let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
-
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[
-                &texture_bind_group_layout,
-                &camera_bind_group_layout,
-            ],
-            push_constant_ranges: &[],
-        });
-
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[
-                    Vertex::desc()
-                ]
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
-                    blend: Some(wgpu::BlendState::REPLACE),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })]
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: None,
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            multiview: None,
-        });
-
-        let vertex_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
-
-        let index_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
-                usage: wgpu::BufferUsages::INDEX
-            }
-        );
-
-        let num_indices = INDICES.len() as u32;
-
         let ray_marcher = RayMarcher::new(&device, &queue, &config, Rc::clone(&camera_bind_group));
+
+        let egui_renderer = EguiRenderer::new(&device, config.format, None, 1, &window);
 
         Self {
             window,
@@ -257,18 +145,15 @@ impl<'a> State<'a> {
             queue,
             size,
             clear_color,
-            render_pipeline,
-            vertex_buffer,
-            index_buffer,
-            num_indices,
-            diffuse_bind_group,
-            diffuse_texture,
             camera,
             camera_controller,
             camera_uniform,
             camera_buffer,
             camera_bind_group,
-            ray_marcher
+            ray_marcher,
+            egui_renderer,
+
+            frametime: 0.0,
         }
     }
 
@@ -276,20 +161,25 @@ impl<'a> State<'a> {
         &self.window
     }
 
+    // Returns the size of the window
     pub fn size(&self) -> PhysicalSize<u32> {
         self.size
     }
 
+    // Called on window resize
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
+            self.camera.set_aspect_ratio(new_size.width as f32 / new_size.height as f32);
         }
     }
 
+    // Called for handling different input events
     pub fn input(&mut self, event: &WindowEvent) -> bool {
+        self.egui_renderer.handle_input(&self.window, &event);
 
         match event {
             WindowEvent::CursorMoved { device_id: _, position } => {
@@ -315,41 +205,40 @@ impl<'a> State<'a> {
         let output = self.surface.get_current_texture()?;
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        // let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-        //     label: Some("Render Encoder"),
-        // });
-
-        // let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-        //     label: Some("Render Pass"),
-        //     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-        //         view: &view,
-        //         resolve_target: None,
-        //         ops: wgpu::Operations {
-        //             load: wgpu::LoadOp::Clear(self.clear_color),
-        //             store: wgpu::StoreOp::Store
-        //         }
-        //     })],
-        //     depth_stencil_attachment: None,
-        //     occlusion_query_set: None,
-        //     timestamp_writes: None,
-        // });
-
-        // render_pass.set_pipeline(&self.render_pipeline);
-        // render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-        // render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
-        // render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        // render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-        // render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
-        // drop(render_pass);
-    
-
-        // self.queue.submit(std::iter::once(encoder.finish()));
-        // output.present();
-
+        // Draw Raymarch Render Pass
         self.ray_marcher.draw(&self.device, &view, &self.queue);
+
+        // Draw GUI
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("GUI Render Encoder"),
+        });
+
+        let screen_descriptor = ScreenDescriptor {
+            size_in_pixels: [self.config.width, self.config.height],
+            pixels_per_point: self.window.scale_factor() as f32,
+        };
+
+        self.egui_renderer.draw(
+                &self.device,
+                &self.queue,
+                &mut encoder,
+                &self.window,
+                &view,
+                screen_descriptor,
+                |ctx| {
+                    egui::Window::new("Window Test").default_open(true)
+                    .show(&ctx, |mut ui| {
+                        ui.label(format!("Frametime: {}", self.frametime));
+                    });
+                }
+        );
+        self.queue.submit(Some(encoder.finish()));
+        
         output.present();
-
-
         Ok(())
+    }
+
+    pub fn set_frametime(&mut self, frametime: f64) {
+        self.frametime = frametime;
     }
 }

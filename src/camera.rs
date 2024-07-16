@@ -30,6 +30,10 @@ impl Camera {
 
         return proj * view;
     }
+
+    pub fn set_aspect_ratio(&mut self, aspect_ratio: f32) {
+        self.aspect = aspect_ratio;
+    }
 }
 
 #[repr(C)]

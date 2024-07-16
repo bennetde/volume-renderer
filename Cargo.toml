@@ -13,6 +13,9 @@ bytemuck = { version = "1.12", features = [ "derive" ] }
 anyhow = "1.0.86"
 glam = "0.28"
 noise = "0.9"
+egui = "0.27.2"
+egui-wgpu = { version = "0.27.2", features = ["winit"] }
+egui-winit = "0.27.2"
 
 [dependencies.image]
 version = "0.24"

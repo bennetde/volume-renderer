@@ -8,6 +8,7 @@ mod transform;
 mod model;
 mod ray_marcher;
 mod voxel;
+mod gui;
 
 use std::time::Instant;
 
@@ -74,8 +75,8 @@ pub async fn run() {
                             Err(wgpu::SurfaceError::OutOfMemory) => control_flow.exit(),
                             Err(e) => eprintln!("{:?}", e),
                         }
-                        // println!("{}ms", time.elapsed().as_millis() as f64);
-                        state.window().set_title(format!("diffdvr-voxel {}ms", time.elapsed().as_millis()).as_str());
+                        
+                        state.set_frametime(time.elapsed().as_secs_f64());
                     }
 
                     _ => {}
