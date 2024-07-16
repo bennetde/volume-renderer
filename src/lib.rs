@@ -37,8 +37,6 @@ pub async fn run() {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
-    // Fullscreen window
-    // window.set_fullscreen(Some(winit::window::Fullscreen::Borderless(window.current_monitor())));
 
     let mut state = State::new(&window).await;
 
@@ -59,6 +57,23 @@ pub async fn run() {
                             },
                         ..
                     } => control_flow.exit(),
+
+                    WindowEvent::KeyboardInput {
+                        event:
+                            KeyEvent {
+                                state: ElementState::Pressed,
+                                physical_key: PhysicalKey::Code(KeyCode::F11),
+                                ..
+                            },
+                        ..
+                    } => {
+                        // Toggle Fullscreen
+                        if state.window().fullscreen().is_some() {
+                            state.window().set_fullscreen(None);
+                        } else {
+                            state.window().set_fullscreen(Some(winit::window::Fullscreen::Borderless(state.window().current_monitor())));
+                        } 
+                    }
 
                     WindowEvent::Resized(physycal_size) => {
                         state.resize(*physycal_size);
