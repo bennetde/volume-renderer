@@ -15,10 +15,7 @@ use std::time::Instant;
 use state::State;
 use vertex::Vertex;
 use winit::{
-    event::*,
-    event_loop::EventLoop,
-    keyboard::{KeyCode, PhysicalKey},
-    window::WindowBuilder,
+    event::*, event_loop::EventLoop, keyboard::{KeyCode, PhysicalKey}, monitor::{MonitorHandle, VideoMode}, window::WindowBuilder
 };
 
 const VERTICES: &[Vertex] = &[
@@ -40,6 +37,8 @@ pub async fn run() {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
+    // Fullscreen window
+    // window.set_fullscreen(Some(winit::window::Fullscreen::Borderless(window.current_monitor())));
 
     let mut state = State::new(&window).await;
 
