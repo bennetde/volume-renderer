@@ -70,12 +70,22 @@ impl<'a> State<'a> {
             .copied()
             .unwrap_or(surface_caps.formats[0]);
 
+        println!("{:?}", surface_caps.present_modes);
+
+        // If possible disable VSync
+        let present_mode = if surface_caps.present_modes.contains(&wgpu::PresentMode::Immediate) {
+            wgpu::PresentMode::Immediate
+            // surface_caps.present_modes[0]
+        } else {
+            surface_caps.present_modes[0]
+        };
+
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
             width: size.width,
             height: size.height,
-            present_mode: surface_caps.present_modes[0],
+            present_mode: present_mode,
             alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2
