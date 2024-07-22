@@ -8,16 +8,14 @@ mod transform;
 mod model;
 mod ray_marcher;
 mod voxel;
+mod gui;
 
 use std::time::Instant;
 
 use state::State;
 use vertex::Vertex;
 use winit::{
-    event::*,
-    event_loop::EventLoop,
-    keyboard::{KeyCode, PhysicalKey},
-    window::WindowBuilder,
+    event::*, event_loop::EventLoop, keyboard::{KeyCode, PhysicalKey}, monitor::{MonitorHandle, VideoMode}, window::WindowBuilder
 };
 
 const VERTICES: &[Vertex] = &[
@@ -60,6 +58,23 @@ pub async fn run() {
                         ..
                     } => control_flow.exit(),
 
+                    WindowEvent::KeyboardInput {
+                        event:
+                            KeyEvent {
+                                state: ElementState::Pressed,
+                                physical_key: PhysicalKey::Code(KeyCode::F11),
+                                ..
+                            },
+                        ..
+                    } => {
+                        // Toggle Fullscreen
+                        if state.window().fullscreen().is_some() {
+                            state.window().set_fullscreen(None);
+                        } else {
+                            state.window().set_fullscreen(Some(winit::window::Fullscreen::Borderless(state.window().current_monitor())));
+                        } 
+                    }
+
                     WindowEvent::Resized(physycal_size) => {
                         state.resize(*physycal_size);
                     }
@@ -74,8 +89,8 @@ pub async fn run() {
                             Err(wgpu::SurfaceError::OutOfMemory) => control_flow.exit(),
                             Err(e) => eprintln!("{:?}", e),
                         }
-                        // println!("{}ms", time.elapsed().as_millis() as f64);
-                        state.window().set_title(format!("diffdvr-voxel {}ms", time.elapsed().as_millis()).as_str());
+                        
+                        state.set_frametime(time.elapsed().as_secs_f64());
                     }
 
                     _ => {}

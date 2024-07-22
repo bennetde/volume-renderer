@@ -106,7 +106,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     var output: RayMarchOutput = RayMarchOutput();
 
     // Set initial colors and alpha for alpha blending
-    var color = vec3<f32>(1.0);
+    var color = vec3<f32>(0.0);
     var alpha = 0.0;
 
     output.min_distance_to_scene = 10000.0;
