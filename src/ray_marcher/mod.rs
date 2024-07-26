@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
-use glam::{UVec3, Vec4};
-use wgpu::{BindGroup, Color, CommandBuffer, Device, FragmentState, PrimitiveState, Queue, RenderPass, RenderPipeline, RenderPipelineDescriptor, SurfaceConfiguration, TextureView, VertexState};
-use crate::{camera, model::{DrawModel, Model}, vertex::Vertex, voxel::{self, grid::VoxelGrid, init::perlin::init_grid_buffer_perlin, voxel::Voxel}};
+use glam::UVec3;
+use wgpu::{BindGroup, Color, CommandBuffer, Device, FragmentState, PrimitiveState, Queue, RenderPipeline, RenderPipelineDescriptor, SurfaceConfiguration, TextureView, VertexState};
+use crate::{model::{DrawModel, Model}, vertex::Vertex, voxel::{grid::VoxelGrid, init::perlin::init_grid_buffer_perlin}};
 
 
 const VERTICES: &[Vertex] = &[
@@ -108,7 +108,7 @@ impl RayMarcher {
         }
     }
 
-    pub fn draw(&self, device: &Device, view: &TextureView, queue: &Queue) -> CommandBuffer {
+    pub fn draw(&self, device: &Device, view: &TextureView) -> CommandBuffer {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Raymarching Render Encoder"),
         });

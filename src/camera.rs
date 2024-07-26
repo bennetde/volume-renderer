@@ -4,7 +4,6 @@ use crate::transform::Transform;
 /// Camera struct that stores all information necessary for perspective rendering.
 pub struct Camera {
     pub transform: Transform,
-    target: Vec3,
     aspect: f32,
     fovy: f32,
     znear: f32,
@@ -15,7 +14,6 @@ impl Camera {
     pub fn new(aspect_ratio: f32) -> Camera {
         Camera {
             transform: Transform::default().move_pos(Vec3::new(-5.0, -5.0, -5.0)),
-            target: Vec3::ZERO,
             aspect: aspect_ratio,
             fovy: 45.0,
             znear: 0.1,

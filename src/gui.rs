@@ -10,6 +10,7 @@ pub struct EguiRenderer {
     renderer: Renderer,
 }
 
+#[allow(dead_code)]
 impl EguiRenderer {
     pub fn context(&self) -> &Context {
         self.state.egui_ctx()
@@ -24,7 +25,7 @@ impl EguiRenderer {
     ) -> EguiRenderer {
         let egui_context = Context::default();
 
-        let mut egui_state = egui_winit::State::new(
+        let egui_state = egui_winit::State::new(
             egui_context,
             egui::viewport::ViewportId::ROOT,
             &window,
@@ -41,7 +42,7 @@ impl EguiRenderer {
     }
 
     pub fn handle_input(&mut self, window: &Window, event: &WindowEvent) {
-        self.state.on_window_event(window, &event);
+        let _ = self.state.on_window_event(window, &event);
     }
 
     pub fn ppp(&mut self, v: f32) {
@@ -63,7 +64,7 @@ impl EguiRenderer {
             .set_pixels_per_point(screen_descriptor.pixels_per_point);
 
         let raw_input = self.state.take_egui_input(&window);
-        let full_output = self.state.egui_ctx().run(raw_input, |ui| {
+        let full_output = self.state.egui_ctx().run(raw_input, |_ui| {
             run_ui(&self.state.egui_ctx());
         });
 

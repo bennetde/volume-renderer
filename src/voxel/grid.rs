@@ -1,18 +1,17 @@
 use std::ops::{Index, IndexMut};
 
-use glam::{UVec3, Vec3, Vec4};
-use wgpu::{core::device::queue, util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferAddress, BufferUsages, Device, Queue, ShaderStages};
+use glam::UVec3;
+use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, Queue, ShaderStages};
 
 use crate::texture_3d::Texture3D;
 
-use super::{init::perlin::init_grid_buffer_perlin, voxel::Voxel};
+use super::voxel::Voxel;
 pub struct VoxelGrid {
     voxels: Vec<Voxel>,
     pub dimensions: UVec3,
     voxels_buffer: wgpu::Buffer,
     pub voxels_bind_group_layout: BindGroupLayout,
     pub voxels_bind_group: BindGroup,
-    voxel_grid_buffer: wgpu::Buffer,
     pub voxel_texture: Texture3D,
     pub voxel_texture_bind_group_layout: BindGroupLayout,
     pub voxel_texture_bind_group: BindGroup
@@ -55,7 +54,7 @@ impl VoxelGrid {
             ]
         });
 
-        let mut voxels: Vec<Voxel> = vec![Voxel::default(); dimensions.x as usize * dimensions.y as usize * dimensions.z as usize];
+        let voxels: Vec<Voxel> = vec![Voxel::default(); dimensions.x as usize * dimensions.y as usize * dimensions.z as usize];
 
 
         let voxels_buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -147,7 +146,6 @@ impl VoxelGrid {
             voxels_bind_group_layout: layout,
             voxels_buffer,
             voxels_bind_group,
-            voxel_grid_buffer,
             voxel_texture: texture,
             voxel_texture_bind_group_layout,
             voxel_texture_bind_group

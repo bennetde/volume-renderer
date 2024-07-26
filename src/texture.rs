@@ -1,12 +1,14 @@
 use image::GenericImageView;
 use anyhow::*;
 
+#[allow(dead_code)]
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
 }
 
+#[allow(dead_code)]
 impl Texture {
     pub fn from_bytes(
         device: &wgpu::Device,

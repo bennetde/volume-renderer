@@ -1,8 +1,5 @@
-use std::{fs::{File, OpenOptions}, io::BufWriter};
-
-use image::{flat::SampleLayout, imageops::thumbnail, FlatSamples, Rgba, SubImage};
-use png::chunk::{ChunkType, IDAT};
-use wgpu::{CommandBuffer, CommandEncoderDescriptor, Device, Queue, SurfaceConfiguration, SurfaceTexture};
+use image::{flat::SampleLayout, imageops::thumbnail, FlatSamples, Rgba};
+use wgpu::{CommandBuffer, CommandEncoderDescriptor, Device, SurfaceConfiguration, SurfaceTexture};
 
 pub struct Screenshotter {
     buffer: wgpu::Buffer
@@ -26,7 +23,7 @@ impl Screenshotter {
         }
     }
 
-    pub fn screenshot(&self, surface: &SurfaceTexture, config: &SurfaceConfiguration, device: &Device, queue: &Queue) -> CommandBuffer {
+    pub fn screenshot(&self, surface: &SurfaceTexture, config: &SurfaceConfiguration, device: &Device) -> CommandBuffer {
         let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor { label: Some("screenshot_command_encoder") });
 
         let texture = &surface.texture;

@@ -1,5 +1,4 @@
 use glam::UVec3;
-use image::GenericImageView;
 use anyhow::*;
 
 pub struct Texture3D {

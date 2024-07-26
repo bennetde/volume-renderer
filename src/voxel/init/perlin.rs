@@ -1,5 +1,5 @@
-use glam::{DVec3, UVec3, Vec4};
-use noise::{Fbm, NoiseFn, Perlin};
+use glam::{DVec3, UVec3};
+use noise::{NoiseFn, Perlin};
 
 use crate::voxel::grid::VoxelGrid;
 

@@ -1,8 +1,9 @@
 use std::ops::Range;
 
-use wgpu::{util::DeviceExt, Buffer, Device, RenderPass};
+use wgpu::{util::DeviceExt, Buffer, Device};
 use crate::vertex::Vertex;
 
+#[allow(dead_code)]
 pub struct Model {
     name: String,
     vertex_buffer: Buffer,

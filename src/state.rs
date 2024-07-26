@@ -20,7 +20,6 @@ pub struct State<'a> {
     camera_controller: CameraController,
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
-    camera_bind_group: Rc<wgpu::BindGroup>,
     ray_marcher: RayMarcher,
     egui_renderer: EguiRenderer,
     screenshotter: Screenshotter,
@@ -164,7 +163,6 @@ impl<'a> State<'a> {
             camera_controller,
             camera_uniform,
             camera_buffer,
-            camera_bind_group,
             ray_marcher,
             egui_renderer,
             screenshotter,
@@ -222,7 +220,7 @@ impl<'a> State<'a> {
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         // Draw Raymarch Render Pass
-        let raymarch_command = self.ray_marcher.draw(&self.device, &view, &self.queue);
+        let raymarch_command = self.ray_marcher.draw(&self.device, &view);
 
         // Draw GUI
         let mut gui_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -244,10 +242,10 @@ impl<'a> State<'a> {
                 screen_descriptor,
                 |ctx| {
                     egui::Window::new("Window Test").default_open(true)
-                    .show(&ctx, |mut ui| {
+                    .show(&ctx, |ui| {
                         ui.label(format!("Frametime: {}", self.frametime));
                         if ui.button("Screenshot").clicked() {
-                            screenshot_command = Some(self.screenshotter.screenshot(&output, &self.config, &self.device, &self.queue));
+                            screenshot_command = Some(self.screenshotter.screenshot(&output, &self.config, &self.device));
                         }
                     });
                 }
