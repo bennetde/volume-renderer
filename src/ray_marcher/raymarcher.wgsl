@@ -121,7 +121,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     // Set initial ray distance to the first point where the ray intersects with the volume
     var dt = aabb_intersection.t_min;
 
-    for(var i = 0; i < 10000; i += 1) {
+    for(var i = 0; i < 100000; i += 1) {
         // Calculate next position & then sample the scene at that point
         let p: vec3<f32> = ro + rd * dt;
         let hitInfo = scene(p);

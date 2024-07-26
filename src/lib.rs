@@ -9,25 +9,14 @@ mod model;
 mod ray_marcher;
 mod voxel;
 mod gui;
+mod screenshot;
 
 use std::time::Instant;
 
 use state::State;
-use vertex::Vertex;
 use winit::{
-    event::*, event_loop::EventLoop, keyboard::{KeyCode, PhysicalKey}, monitor::{MonitorHandle, VideoMode}, window::WindowBuilder
+    event::*, event_loop::EventLoop, keyboard::{KeyCode, PhysicalKey}, window::WindowBuilder
 };
-
-const VERTICES: &[Vertex] = &[
-    Vertex { position: [-1.0, -1.0, 0.0], tex_coords: [0.0, 1.0], }, // A
-    Vertex { position: [1.0, -1.0, 0.0], tex_coords: [1.0, 1.0], }, // B
-    Vertex { position: [0.0, 1.0, 0.0], tex_coords: [0.5, 0.0], }, // C
-];
-
-
-const INDICES: &[u16] = &[
-    0, 1, 2
-];
 
 /// Main function for this application.
 /// 

@@ -16,6 +16,8 @@ noise = "0.9"
 egui = "0.27.2"
 egui-wgpu = { version = "0.27.2", features = ["winit"] }
 egui-winit = "0.27.2"
+flume = "0.11.0"
+png = "0.17.13"
 
 [dependencies.image]
 version = "0.24"

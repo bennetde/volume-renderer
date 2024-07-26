@@ -4,7 +4,7 @@ use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
 use wgpu::{util::DeviceExt, Color};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
-use crate::{camera::{self, Camera, CameraUniform}, camera_controller::{self, CameraController}, gui::EguiRenderer, ray_marcher::{self, RayMarcher}, texture::{self, Texture}, vertex::Vertex, INDICES, VERTICES};
+use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter};
 
 /// Handles and stores the state of the application. 
 /// Additionally holds data needed for rendering, but this should be moved into it's own struct in the future.
@@ -23,6 +23,7 @@ pub struct State<'a> {
     camera_bind_group: Rc<wgpu::BindGroup>,
     ray_marcher: RayMarcher,
     egui_renderer: EguiRenderer,
+    screenshotter: Screenshotter,
 
     frametime: f64,
 }
@@ -65,10 +66,12 @@ impl<'a> State<'a> {
 
         let surface_caps = surface.get_capabilities(&adapter);
 
-        let surface_format = surface_caps.formats.iter()
-            .find(|f| f.is_srgb())
-            .copied()
-            .unwrap_or(surface_caps.formats[0]);
+        // let surface_format = surface_caps.formats.iter()
+        //     .find(|f| f.is_srgb())
+        //     .copied()
+        //     .unwrap_or(surface_caps.formats[0]);
+
+        let surface_format = wgpu::TextureFormat::Rgba8UnormSrgb;
 
         println!("{:?}", surface_caps.present_modes);
 
@@ -81,7 +84,7 @@ impl<'a> State<'a> {
         };
 
         let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
             format: surface_format,
             width: size.width,
             height: size.height,
@@ -147,6 +150,8 @@ impl<'a> State<'a> {
 
         let egui_renderer = EguiRenderer::new(&device, config.format, None, 1, &window);
 
+        let screenshotter = Screenshotter::new(&device, &config);
+
         Self {
             window,
             surface,
@@ -162,6 +167,7 @@ impl<'a> State<'a> {
             camera_bind_group,
             ray_marcher,
             egui_renderer,
+            screenshotter,
 
             frametime: 0.0,
         }
@@ -216,10 +222,10 @@ impl<'a> State<'a> {
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         // Draw Raymarch Render Pass
-        self.ray_marcher.draw(&self.device, &view, &self.queue);
+        let raymarch_command = self.ray_marcher.draw(&self.device, &view, &self.queue);
 
         // Draw GUI
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        let mut gui_encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("GUI Render Encoder"),
         });
 
@@ -228,10 +234,11 @@ impl<'a> State<'a> {
             pixels_per_point: self.window.scale_factor() as f32,
         };
 
+        let mut screenshot_command = None;
         self.egui_renderer.draw(
                 &self.device,
                 &self.queue,
-                &mut encoder,
+                &mut gui_encoder,
                 &self.window,
                 &view,
                 screen_descriptor,
@@ -239,12 +246,31 @@ impl<'a> State<'a> {
                     egui::Window::new("Window Test").default_open(true)
                     .show(&ctx, |mut ui| {
                         ui.label(format!("Frametime: {}", self.frametime));
+                        if ui.button("Screenshot").clicked() {
+                            screenshot_command = Some(self.screenshotter.screenshot(&output, &self.config, &self.device, &self.queue));
+                        }
                     });
                 }
         );
-        self.queue.submit(Some(encoder.finish()));
+
+        let gui_command = gui_encoder.finish();
+
+        // Ensure that the screenshot is taken before the GUI is rendered
+        let mut commands = vec![raymarch_command];
+        let mut took_screenshot = false;
+        if let Some(screenshot_cmd) = screenshot_command {
+            commands.push(screenshot_cmd);
+            took_screenshot = true;
+        }
+        commands.push(gui_command);
+        self.queue.submit(commands);
         
         output.present();
+
+        if took_screenshot {
+            let fut = self.screenshotter.save_screenshot_to_disk(&self.device, &self.config, "test.png");
+            pollster::block_on(fut);
+        }
         Ok(())
     }
 

@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use glam::{UVec3, Vec4};
-use wgpu::{BindGroup, Color, Device, FragmentState, PrimitiveState, Queue, RenderPass, RenderPipeline, RenderPipelineDescriptor, SurfaceConfiguration, TextureView, VertexState};
+use wgpu::{BindGroup, Color, CommandBuffer, Device, FragmentState, PrimitiveState, Queue, RenderPass, RenderPipeline, RenderPipelineDescriptor, SurfaceConfiguration, TextureView, VertexState};
 use crate::{camera, model::{DrawModel, Model}, vertex::Vertex, voxel::{self, grid::VoxelGrid, init::perlin::init_grid_buffer_perlin, voxel::Voxel}};
 
 
@@ -108,7 +108,7 @@ impl RayMarcher {
         }
     }
 
-    pub fn draw(&self, device: &Device, view: &TextureView, queue: &Queue) {
+    pub fn draw(&self, device: &Device, view: &TextureView, queue: &Queue) -> CommandBuffer {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Raymarching Render Encoder"),
         });
@@ -135,9 +135,6 @@ impl RayMarcher {
         render_pass.draw_model(&self.screen_model);
 
         drop(render_pass);
-        queue.submit(std::iter::once(encoder.finish()));
-
-
-
+        encoder.finish()
     }
 }
