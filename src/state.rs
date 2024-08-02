@@ -4,7 +4,7 @@ use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
 use wgpu::{util::DeviceExt, Color};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
-use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter};
+use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, camera_sphere_controller::{self, CameraSphereController}, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter};
 
 /// Handles and stores the state of the application. 
 /// Additionally holds data needed for rendering, but this should be moved into it's own struct in the future.
@@ -18,6 +18,7 @@ pub struct State<'a> {
     clear_color: Color,
     camera: Camera,
     camera_controller: CameraController,
+    camera_sphere_controller: CameraSphereController,
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
     ray_marcher: RayMarcher,
@@ -151,6 +152,8 @@ impl<'a> State<'a> {
 
         let screenshotter = Screenshotter::new(&device, &config);
 
+        let camera_sphere_controller = CameraSphereController::new(32, 32, Vec3::ONE * 16.0, 100.0);
+
         Self {
             window,
             surface,
@@ -161,6 +164,7 @@ impl<'a> State<'a> {
             clear_color,
             camera,
             camera_controller,
+            camera_sphere_controller,
             camera_uniform,
             camera_buffer,
             ray_marcher,
@@ -188,6 +192,9 @@ impl<'a> State<'a> {
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);
             self.camera.set_aspect_ratio(new_size.width as f32 / new_size.height as f32);
+
+            // Screenshotter has to be recreated after resizing the window
+            self.screenshotter = Screenshotter::new(&self.device, &self.config);
         }
     }
 
@@ -209,8 +216,10 @@ impl<'a> State<'a> {
     }
 
     pub fn update(&mut self) {
-        self.camera_controller.update_camera(&mut self.camera, 1.0/60.0);
+        // self.camera_controller.update_camera(&mut self.camera, 1.0/60.0);
+        self.camera_sphere_controller.update_camera(&mut self.camera);
         self.camera.transform.look_to(Vec3::ONE * 16.0, Vec3::NEG_Y);
+        // self.camera.look_dir = self.camera.transform.position - Vec3::ONE * 16.0;
         self.camera_uniform.update_view_proj(&mut self.camera);
         self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
     }
@@ -247,6 +256,17 @@ impl<'a> State<'a> {
                         if ui.button("Screenshot").clicked() {
                             screenshot_command = Some(self.screenshotter.screenshot(&output, &self.config, &self.device));
                         }
+                        
+                        let max_x = self.camera_sphere_controller.x_divisions();
+                        let slider = egui::Slider::new(&mut self.camera_sphere_controller.current_index_x, 0..=max_x).text("X Arc");
+                        ui.add(slider);
+
+                        let max_y = self.camera_sphere_controller.y_divisions();
+                        let slider = egui::Slider::new(&mut self.camera_sphere_controller.current_index_y, 1..=max_y-1).text("Y Arc");
+                        ui.add(slider);
+
+                        let slider = egui::Slider::new(&mut self.camera_sphere_controller.radius, 0.0..=1000.0).text("Radius");
+                        ui.add(slider);
                     });
                 }
         );

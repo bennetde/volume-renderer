@@ -4,6 +4,7 @@ mod texture;
 mod texture_3d;
 mod camera;
 mod camera_controller;
+mod camera_sphere_controller;
 mod transform;
 mod model;
 mod ray_marcher;

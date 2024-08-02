@@ -130,10 +130,19 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         color = alpha * color + (1.0 - alpha) * hitInfo.alpha * hitInfo.color;
         alpha = alpha + (1.0 - alpha) * hitInfo.alpha;
 
+        // Debugging: Uncomment to highlight center as a red sphere
+        // if length(vec3<f32>(16.0) - p) < 0.5 {
+        //     output.color = vec3<f32>(1.0,0.0, 0.0);
+        //     alpha = 1.0;
+        //     return output;
+        // }
+
         // When the alpha reaches 1.0, no more color from behind has an influence on the output image so we stop raymarching
         if(alpha >= 1.0) {
             break;
         }
+
+
 
         // Increase distance for the next sampling step
         dt += 0.1;
