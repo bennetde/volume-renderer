@@ -53,9 +53,21 @@ impl CameraSphereController {
         self.current_index_y = new;
     }
 
-    pub fn update_camera(&self, camera: &mut Camera) {
+    pub fn update_camera(&mut self, camera: &mut Camera) -> bool {
         // println!("{}", self.current_index_x);
+        if self.is_screenshotting {
+            if self.current_index_x < self.horizontal_divisons {
+                self.current_index_x += 1;
+            } else if self.current_index_y < self.vertical_divisions - 1 {
+                self.current_index_y += 1;
+                self.current_index_x = 0;
+            } else {
+                self.is_screenshotting = false;
+            }
+        }
+
         camera.transform.position = self.get_position_on_sphere();
+        self.is_screenshotting
     }
 
     pub fn x_divisions(&self) -> u32 {
@@ -83,5 +95,10 @@ impl CameraSphereController {
         self.is_screenshotting = true;
         self.current_index_x = 0;
         self.current_index_y = 1;
+        println!("{}", self.x_divisions())
+    }
+
+    pub fn get_position_as_string(&self) -> String {
+        format!("{}-{}", self.current_index_x, self.current_index_y)
     }
 }

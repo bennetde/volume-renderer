@@ -27,6 +27,7 @@ pub struct State<'a> {
     screenshotter: Screenshotter,
 
     frametime: f64,
+    should_screenshot: bool,
 }
 
 impl<'a> State<'a> {
@@ -153,7 +154,7 @@ impl<'a> State<'a> {
 
         let screenshotter = Screenshotter::new(&device, &config);
 
-        let camera_sphere_controller = CameraSphereController::new(32, 32, Vec3::ONE * 16.0, 100.0);
+        let camera_sphere_controller = CameraSphereController::new(4, 8, Vec3::ONE * 16.0, 100.0);
 
         Self {
             window,
@@ -171,7 +172,7 @@ impl<'a> State<'a> {
             ray_marcher,
             egui_renderer,
             screenshotter,
-
+            should_screenshot: false,
             frametime: 0.0,
         }
     }
@@ -218,7 +219,7 @@ impl<'a> State<'a> {
 
     pub fn update(&mut self) {
         // self.camera_controller.update_camera(&mut self.camera, 1.0/60.0);
-        self.camera_sphere_controller.update_camera(&mut self.camera);
+        self.should_screenshot = self.camera_sphere_controller.update_camera(&mut self.camera);
         self.camera.transform.look_to(Vec3::ONE * 16.0, Vec3::NEG_Y);
         // self.camera.look_dir = self.camera.transform.position - Vec3::ONE * 16.0;
         self.camera_uniform.update_view_proj(&mut self.camera);
@@ -242,7 +243,6 @@ impl<'a> State<'a> {
             pixels_per_point: self.window.scale_factor() as f32,
         };
 
-        let mut screenshot_command = None;
         self.egui_renderer.draw(
                 &self.device,
                 &self.queue,
@@ -255,9 +255,14 @@ impl<'a> State<'a> {
                     .show(&ctx, |ui| {
                         ui.label(format!("Frametime: {}", self.frametime));
                         if ui.button("Screenshot").clicked() {
-                            screenshot_command = Some(self.screenshotter.screenshot(&output, &self.config, &self.device));
+                            self.should_screenshot = true;
                         }
                         
+                        if ui.button("Screenshot All").clicked() {
+                            self.camera_sphere_controller.start_screenshotting();
+                            self.should_screenshot = true;
+                        }
+
                         let max_x = self.camera_sphere_controller.x_divisions();
                         let slider = egui::Slider::new(&mut self.camera_sphere_controller.current_index_x, 0..=max_x).text("X Arc");
                         ui.add(slider);
@@ -276,21 +281,21 @@ impl<'a> State<'a> {
 
         // Ensure that the screenshot is taken before the GUI is rendered
         let mut commands = vec![raymarch_command];
-        let mut took_screenshot = false;
-        if let Some(screenshot_cmd) = screenshot_command {
-            commands.push(screenshot_cmd);
-            took_screenshot = true;
+        if self.should_screenshot {
+            commands.push(self.screenshotter.screenshot(&output, &self.config, &self.device));
         }
         commands.push(gui_command);
         self.queue.submit(commands);
         
         output.present();
 
-        if took_screenshot {
-            let current_time = Utc::now().timestamp();
-            let filename = format!("screenshots/{}.png", current_time);
+        if self.should_screenshot {
+            // let current_time = Utc::now().timestamp();
+            let filename = format!("screenshots/{}.png", self.camera_sphere_controller.get_position_as_string());
+            println!("Screenshotting: {}", filename);
             let fut = self.screenshotter.save_screenshot_to_disk(&self.device, &self.config, filename.as_str());
             pollster::block_on(fut);
+            self.should_screenshot = false;
         }
         Ok(())
     }
