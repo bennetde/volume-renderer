@@ -1,5 +1,6 @@
-use std::rc::Rc;
+use std::{rc::Rc, thread::current, time::SystemTime};
 
+use chrono::Utc;
 use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
 use wgpu::{util::DeviceExt, Color};
@@ -286,7 +287,9 @@ impl<'a> State<'a> {
         output.present();
 
         if took_screenshot {
-            let fut = self.screenshotter.save_screenshot_to_disk(&self.device, &self.config, "test.png");
+            let current_time = Utc::now().timestamp();
+            let filename = format!("screenshots/{}.png", current_time);
+            let fut = self.screenshotter.save_screenshot_to_disk(&self.device, &self.config, filename.as_str());
             pollster::block_on(fut);
         }
         Ok(())
