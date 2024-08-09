@@ -13,7 +13,6 @@ pub struct CameraSphereController {
     pub current_index_y: u32,
     pub radius: f32,
     pub origin: Vec3,
-    is_screenshotting: bool,
 }
 
 impl CameraSphereController {
@@ -25,7 +24,6 @@ impl CameraSphereController {
             current_index_y: 4,
             radius: radius,
             origin,
-            is_screenshotting: false
         }
     }
 
@@ -53,23 +51,6 @@ impl CameraSphereController {
         self.current_index_y = new;
     }
 
-    pub fn update_camera(&mut self, camera: &mut Camera) -> bool {
-        // println!("{}", self.current_index_x);
-        if self.is_screenshotting {
-            if self.current_index_x < self.horizontal_divisons {
-                self.current_index_x += 1;
-            } else if self.current_index_y < self.vertical_divisions - 1 {
-                self.current_index_y += 1;
-                self.current_index_x = 0;
-            } else {
-                self.is_screenshotting = false;
-            }
-        }
-
-        camera.transform.position = self.get_position_on_sphere();
-        self.is_screenshotting
-    }
-
     pub fn x_divisions(&self) -> u32 {
         self.horizontal_divisons
     }
@@ -78,8 +59,13 @@ impl CameraSphereController {
         self.vertical_divisions
     }
 
+    pub fn update_position(&self, camera: &mut Camera) {
+        camera.transform.position = self.get_position_on_sphere();
+        camera.transform.look_to(self.origin, Vec3::NEG_Y);
+    }
+
     /// Using the current indices, returns the according position on the sphere
-    fn get_position_on_sphere(&self) -> Vec3 {
+    pub fn get_position_on_sphere(&self) -> Vec3 {
         let theta: f32 = self.current_index_x as f32 / self.horizontal_divisons as f32 * PI * 2.0;
 
         let phi: f32 = self.current_index_y as f32 / self.vertical_divisions as f32 * PI;
@@ -89,13 +75,6 @@ impl CameraSphereController {
         let pos = Vec3::new(x, z,-y);
 
         pos + self.origin
-    }
-
-    pub fn start_screenshotting(&mut self) {
-        self.is_screenshotting = true;
-        self.current_index_x = 0;
-        self.current_index_y = 1;
-        println!("{}", self.x_divisions())
     }
 
     pub fn get_position_as_string(&self) -> String {

@@ -5,7 +5,7 @@ use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
 use wgpu::{util::DeviceExt, Color};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
-use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, camera_sphere_controller::{self, CameraSphereController}, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter};
+use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, camera_sphere_controller::{self, CameraSphereController}, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter, sphere_screenshot_manager::{self, SphereScreenshotManager}};
 
 /// Handles and stores the state of the application. 
 /// Additionally holds data needed for rendering, but this should be moved into it's own struct in the future.
@@ -25,7 +25,7 @@ pub struct State<'a> {
     ray_marcher: RayMarcher,
     egui_renderer: EguiRenderer,
     screenshotter: Screenshotter,
-
+    sphere_screenshot_manager: SphereScreenshotManager,
     frametime: f64,
     should_screenshot: bool,
 }
@@ -154,7 +154,9 @@ impl<'a> State<'a> {
 
         let screenshotter = Screenshotter::new(&device, &config);
 
-        let camera_sphere_controller = CameraSphereController::new(4, 8, Vec3::ONE * 16.0, 100.0);
+        let camera_sphere_controller = CameraSphereController::new(8, 8, Vec3::ONE * 16.0, 100.0);
+
+        let sphere_screenshot_manager = SphereScreenshotManager::new(&camera_sphere_controller);
 
         Self {
             window,
@@ -172,6 +174,7 @@ impl<'a> State<'a> {
             ray_marcher,
             egui_renderer,
             screenshotter,
+            sphere_screenshot_manager,
             should_screenshot: false,
             frametime: 0.0,
         }
@@ -219,8 +222,8 @@ impl<'a> State<'a> {
 
     pub fn update(&mut self) {
         // self.camera_controller.update_camera(&mut self.camera, 1.0/60.0);
-        self.should_screenshot = self.camera_sphere_controller.update_camera(&mut self.camera);
-        self.camera.transform.look_to(Vec3::ONE * 16.0, Vec3::NEG_Y);
+        self.should_screenshot = self.sphere_screenshot_manager.update_camera(&mut self.camera_sphere_controller,&mut self.camera);
+        // self.camera.transform.look_to(Vec3::ONE * 16.0, Vec3::NEG_Y);
         // self.camera.look_dir = self.camera.transform.position - Vec3::ONE * 16.0;
         self.camera_uniform.update_view_proj(&mut self.camera);
         self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
@@ -259,7 +262,7 @@ impl<'a> State<'a> {
                         }
                         
                         if ui.button("Screenshot All").clicked() {
-                            self.camera_sphere_controller.start_screenshotting();
+                            self.sphere_screenshot_manager.start_screenshotting(&mut self.camera_sphere_controller);
                             self.should_screenshot = true;
                         }
 
@@ -292,7 +295,6 @@ impl<'a> State<'a> {
         if self.should_screenshot {
             // let current_time = Utc::now().timestamp();
             let filename = format!("screenshots/{}.png", self.camera_sphere_controller.get_position_as_string());
-            println!("Screenshotting: {}", filename);
             let fut = self.screenshotter.save_screenshot_to_disk(&self.device, &self.config, filename.as_str());
             pollster::block_on(fut);
             self.should_screenshot = false;

@@ -11,6 +11,7 @@ mod ray_marcher;
 mod voxel;
 mod gui;
 mod screenshot;
+mod sphere_screenshot_manager;
 
 use std::time::Instant;
 
