@@ -80,7 +80,7 @@ impl Screenshotter {
 
             // TODO: Find a better way to save the image.
             thumbnail(&view, config.width, config.height).save(file_name).unwrap();
-            println!("Saved screenshot to file");
+            println!("Saved screenshot to file {}", file_name);
         }
 
         // Unmap buffer so it can be used again for the next screenshot

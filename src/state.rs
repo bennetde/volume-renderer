@@ -254,7 +254,7 @@ impl<'a> State<'a> {
                 &view,
                 screen_descriptor,
                 |ctx| {
-                    egui::Window::new("Window Test").default_open(true)
+                    egui::Window::new("").default_open(true)
                     .show(&ctx, |ui| {
                         ui.label(format!("Frametime: {}", self.frametime));
                         if ui.button("Screenshot").clicked() {
@@ -262,7 +262,7 @@ impl<'a> State<'a> {
                         }
                         
                         if ui.button("Screenshot All").clicked() {
-                            self.sphere_screenshot_manager.start_screenshotting(&mut self.camera_sphere_controller);
+                            self.sphere_screenshot_manager.start_screenshotting(&mut self.camera_sphere_controller, &mut self.camera);
                             self.should_screenshot = true;
                         }
 
@@ -276,6 +276,10 @@ impl<'a> State<'a> {
 
                         let slider = egui::Slider::new(&mut self.camera_sphere_controller.radius, 0.0..=1000.0).text("Radius");
                         ui.add(slider);
+
+                        ui.label(format!("Position: {}", self.camera.transform.position));
+                        ui.label(format!("Right: {}", self.camera.transform.right()));
+                        ui.label(format!("Up: {}", self.camera.transform.up()))
                     });
                 }
         );

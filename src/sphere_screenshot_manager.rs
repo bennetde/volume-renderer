@@ -19,11 +19,13 @@ impl SphereScreenshotManager {
         }
     }
 
-    pub fn start_screenshotting(&mut self, csp: &mut CameraSphereController) {
+    pub fn start_screenshotting(&mut self, csp: &mut CameraSphereController, camera: &mut Camera) {
         self.is_screenshotting = true;
         csp.current_index_x = 0;
         csp.current_index_y = 1;
         self.positions.clear();
+        csp.update_position(camera);
+        self.add_position(csp, camera);
     }
 
 
@@ -35,6 +37,7 @@ impl SphereScreenshotManager {
             } else if csp.current_index_y < csp.y_divisions() - 1 {
                 csp.current_index_y += 1;
                 csp.current_index_x = 0;
+                // println!("Increasing y")
             } else {
                 self.is_screenshotting = false;
                 self.save_positions_to_json("screenshots/camera.json").unwrap();
@@ -43,12 +46,20 @@ impl SphereScreenshotManager {
         }
 
         csp.update_position(camera);
+        if self.is_screenshotting {
+            self.add_position(csp, camera)
+        }
+        self.is_screenshotting
+    }
+
+    fn add_position(&mut self, csp: &CameraSphereController, camera: &Camera) {
         self.positions.push(CameraPositions {
             position: camera.transform.position.to_array(),
             right: camera.transform.right().to_array(),
-            up: camera.transform.up().to_array()
+            up: camera.transform.up().to_array(),
+            img: format!("{}.png", csp.get_position_as_string().to_string()),
         });
-        self.is_screenshotting
+        // println!("Add pos: {}", csp.get_position_as_string());
     }
 
     pub fn save_positions_to_json(&self, path: &str) -> Result<()> {
@@ -66,4 +77,5 @@ struct CameraPositions {
     pub position: [f32; 3],
     pub right: [f32; 3],
     pub up: [f32;3],
+    pub img: String
 }
