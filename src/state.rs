@@ -27,6 +27,7 @@ pub struct State<'a> {
     sphere_screenshot_manager: SphereScreenshotManager,
     frametime: f64,
     should_screenshot: bool,
+    free_move: bool,
 }
 
 impl<'a> State<'a> {
@@ -176,6 +177,7 @@ impl<'a> State<'a> {
             sphere_screenshot_manager,
             should_screenshot: false,
             frametime: 0.0,
+            free_move: true,
         }
     }
 
@@ -221,7 +223,12 @@ impl<'a> State<'a> {
 
     pub fn update(&mut self) {
         // self.camera_controller.update_camera(&mut self.camera, 1.0/60.0);
-        self.should_screenshot = self.sphere_screenshot_manager.update_camera(&mut self.camera_sphere_controller,&mut self.camera);
+        if self.free_move {
+            self.camera_controller.update_camera(&mut self.camera, self.frametime as f32);
+            self.camera.transform.look_to(Vec3::ONE * 16.0, Vec3::Y);
+        } else {
+            self.should_screenshot = self.sphere_screenshot_manager.update_camera(&mut self.camera_sphere_controller,&mut self.camera);
+        }
         // self.camera.transform.look_to(Vec3::ONE * 16.0, Vec3::NEG_Y);
         // self.camera.look_dir = self.camera.transform.position - Vec3::ONE * 16.0;
         self.camera_uniform.update_view_proj(&mut self.camera);
@@ -257,8 +264,11 @@ impl<'a> State<'a> {
                     egui::TopBottomPanel::top("my_panel").show(&ctx, |ui| {
                         menu::bar(ui, |ui| {
                             ui.menu_button("File", |ui| {
-                                if ui.button("Open").clicked() {
+                                if ui.button("Open NetCDF").clicked() {
                                     // …
+                                }
+                                if ui.button("Export NetCDF").clicked() {
+                                    crate::netcdf::write_voxel_grid("test.nc", &self.ray_marcher.voxel_grid).unwrap();
                                 }
                             });
                         });
@@ -274,6 +284,7 @@ impl<'a> State<'a> {
                         }
                         
                         if ui.button("Screenshot All").clicked() {
+                            self.free_move = false;
                             self.sphere_screenshot_manager.start_screenshotting(&mut self.camera_sphere_controller, &mut self.camera);
                             self.should_screenshot = true;
                         }
@@ -294,6 +305,7 @@ impl<'a> State<'a> {
                         ui.label(format!("Up: {:.2}", self.camera.transform.up()));
                         ui.label(format!("Look dir: {:.2}", self.camera.transform.forward()));
                         ui.label(format!("Size: {:?}", self.window.inner_size()));
+                        ui.checkbox(&mut self.free_move, "Free-Move");
                     });
                 }
         );

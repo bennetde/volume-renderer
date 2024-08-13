@@ -1,7 +1,7 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Voxel {
-    color: [u8; 4]
+    pub color: [u8; 4]
 }
 
 impl Voxel {

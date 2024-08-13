@@ -19,7 +19,7 @@ pub struct RayMarcher {
     render_pipeline: RenderPipeline,
     screen_model: Model,
     camera_bind_group: Rc<BindGroup>,
-    voxel_grid: VoxelGrid
+    pub voxel_grid: VoxelGrid
 }
 
 impl RayMarcher {

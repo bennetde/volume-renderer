@@ -12,6 +12,7 @@ mod voxel;
 mod gui;
 mod screenshot;
 mod sphere_screenshot_manager;
+mod netcdf;
 
 use std::time::Instant;
 

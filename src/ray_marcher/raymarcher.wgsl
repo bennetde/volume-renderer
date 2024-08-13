@@ -38,7 +38,7 @@ struct HitInfo {
 // Basically: Multiple HitInfos + Alpha Blending will result in this struct.
 struct RayMarchOutput {
     hit: bool,
-    color: vec3<f32>,
+    color: vec4<f32>,
     distance: f32,
     steps: u32,
     min_distance_to_scene: f32,
@@ -98,7 +98,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     // Raymarch into the scene
     let raymarch_result = raymarch(ro, dir);
-    return vec4<f32>(raymarch_result.color, 1.0);
+    return vec4<f32>(raymarch_result.color);
 }
 
 // Raymarch function that takes a ray's origin and its direction and samples the scene at specific points along the ray's direction
@@ -106,7 +106,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     var output: RayMarchOutput = RayMarchOutput();
 
     // Set initial colors and alpha for alpha blending
-    var color = vec3<f32>(0.0);
+    var res = vec4<f32>(0.0);
     var alpha = 0.0;
 
     output.min_distance_to_scene = 10000.0;
@@ -114,7 +114,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     // Check if the ray ever intersects the volume texture and exit out early if it doesn't
     let aabb_intersection = aabb_intersect(ro, rd, voxel_grid.dimensions);
     if !aabb_intersection.intersects {
-        output.color = vec3<f32>(1.0);
+        output.color = vec4<f32>(0.0);
         return output;
     }
 
@@ -127,9 +127,11 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         let hitInfo = scene(p);
 
         // Use front-to-back alpha blending
-        color = alpha * color + (1.0 - alpha) * hitInfo.alpha * hitInfo.color;
-        alpha = alpha + (1.0 - alpha) * hitInfo.alpha;
-
+        // color = alpha * color + (1.0 - alpha) * hitInfo.alpha * hitInfo.color;
+        var color: vec4<f32> = vec4<f32>(hitInfo.color, hitInfo.alpha / 1024.0);
+        color *= vec4<f32>(vec3<f32>(color.a), 1.0);
+        // alpha = alpha + (1.0 - alpha) * hitInfo.alpha;
+        res += color * (1.0 - res.a);
         // Debugging: Uncomment to highlight center as a red sphere
         // if length(vec3<f32>(16.0) - p) < 0.5 {
         //     output.color = vec3<f32>(1.0,0.0, 0.0);
@@ -138,7 +140,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         // }
 
         // When the alpha reaches 1.0, no more color from behind has an influence on the output image so we stop raymarching
-        if(alpha >= 1.0) {
+        if(res.a >= 1.0) {
             break;
         }
 
@@ -154,10 +156,10 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     }
 
     // Background color
-    color = alpha * color + (1.0 - alpha) * vec3<f32>(1.0);
-    alpha = alpha + (1.0 - alpha);
+    // color = alpha * color + (1.0 - alpha) * vec3<f32>(0.0);
+    // alpha = alpha + (1.0 - alpha);
 
-    output.color = color;
+    output.color = res;
     output.distance = dt;
     return output;
 }
@@ -192,13 +194,13 @@ fn scene(p: vec3<f32>) -> HitInfo {
 
     // Adjust alpha for a more interesting appearance
     output.alpha = sample_result.a;
-    if output.alpha <= 0.5 {
-        output.alpha = 0.0;
-    } else if output.alpha >= 0.9 {
-        output.alpha = 1.0;
-    } else {
-        output.alpha = output.alpha / 64.0;
-    }
+    // if output.alpha <= 0.5 {
+    //     output.alpha = 0.0;
+    // } else if output.alpha >= 0.9 {
+    //     output.alpha = 1.0;
+    // } else {
+    //     output.alpha = output.alpha / 64.0;
+    // }
 
     output.hit = true;
     output.color = sample_result.rgb;
