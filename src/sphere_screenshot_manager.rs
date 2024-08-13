@@ -7,7 +7,7 @@ use crate::{camera::Camera, camera_sphere_controller::{self, CameraSphereControl
 
 pub struct SphereScreenshotManager {
     is_screenshotting: bool,
-    positions: Vec<CameraPositions>
+    screenshot_info: ScreenshotInformation
 
 }
 
@@ -15,7 +15,7 @@ impl SphereScreenshotManager {
     pub fn new(csp: &CameraSphereController) -> Self {
         Self {
             is_screenshotting: false,
-            positions: Vec::with_capacity(csp.x_divisions() as usize * csp.y_divisions() as usize)
+            screenshot_info: ScreenshotInformation::new(csp.x_divisions() as usize * csp.y_divisions() as usize, csp.origin)
         }
     }
 
@@ -23,7 +23,7 @@ impl SphereScreenshotManager {
         self.is_screenshotting = true;
         csp.current_index_x = 0;
         csp.current_index_y = 1;
-        self.positions.clear();
+        self.screenshot_info.positions.clear();
         csp.update_position(camera);
         self.add_position(csp, camera);
     }
@@ -40,7 +40,7 @@ impl SphereScreenshotManager {
                 // println!("Increasing y")
             } else {
                 self.is_screenshotting = false;
-                self.save_positions_to_json("screenshots/camera.json").unwrap();
+                self.save_positions_to_json("screenshots/cameras.json").unwrap();
                 return false;
             }
         }
@@ -53,11 +53,13 @@ impl SphereScreenshotManager {
     }
 
     fn add_position(&mut self, csp: &CameraSphereController, camera: &Camera) {
-        self.positions.push(CameraPositions {
+        self.screenshot_info.positions.push(CameraPositions {
             position: camera.transform.position.to_array(),
             right: camera.transform.right().to_array(),
             up: camera.transform.up().to_array(),
+            front: camera.transform.forward().to_array(),
             img: format!("{}.png", csp.get_position_as_string().to_string()),
+            fovy: camera.fovy()
         });
         // println!("Add pos: {}", csp.get_position_as_string());
     }
@@ -65,7 +67,7 @@ impl SphereScreenshotManager {
     pub fn save_positions_to_json(&self, path: &str) -> Result<()> {
         let file = File::create(path)?;
         let writer = BufWriter::new(file);
-        serde_json::to_writer_pretty(writer, &self.positions)?;
+        serde_json::to_writer_pretty(writer, &self.screenshot_info)?;
         Ok(())
     }
 
@@ -77,5 +79,23 @@ struct CameraPositions {
     pub position: [f32; 3],
     pub right: [f32; 3],
     pub up: [f32;3],
-    pub img: String
+    pub front: [f32;3],
+    pub img: String,
+    pub fovy: f32,
+}
+
+#[derive(Serialize)]
+struct ScreenshotInformation {
+    look_at: [f32;3],
+    positions: Vec<CameraPositions>,
+
+}
+
+impl ScreenshotInformation {
+    pub fn new(size: usize, center: Vec3) -> Self {
+        Self {
+            look_at: center.to_array(),
+            positions: Vec::with_capacity(size)
+        }
+    }
 }

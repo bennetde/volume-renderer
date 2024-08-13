@@ -17,7 +17,7 @@ use std::time::Instant;
 
 use state::State;
 use winit::{
-    event::*, event_loop::EventLoop, keyboard::{KeyCode, PhysicalKey}, window::WindowBuilder
+    dpi::{LogicalSize, Size}, event::*, event_loop::EventLoop, keyboard::{KeyCode, PhysicalKey}, window::WindowBuilder
 };
 
 /// Main function for this application.
@@ -27,7 +27,7 @@ use winit::{
 pub async fn run() {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new().with_inner_size(Size::Logical(LogicalSize::new(1024.0, 1024.0))).build(&event_loop).unwrap();
 
     let mut state = State::new(&window).await;
 

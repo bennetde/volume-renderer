@@ -61,7 +61,7 @@ impl CameraSphereController {
 
     pub fn update_position(&self, camera: &mut Camera) {
         camera.transform.position = self.get_position_on_sphere();
-        camera.transform.look_to(self.origin, Vec3::NEG_Y);
+        camera.transform.look_to(self.origin, Vec3::Y);
     }
 
     /// Using the current indices, returns the according position on the sphere

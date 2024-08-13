@@ -33,6 +33,10 @@ impl Camera {
     pub fn set_aspect_ratio(&mut self, aspect_ratio: f32) {
         self.aspect = aspect_ratio;
     }
+    
+    pub fn fovy(&self) -> f32 {
+        self.fovy
+    }
 }
 
 #[repr(C)]

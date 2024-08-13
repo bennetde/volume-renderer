@@ -27,7 +27,7 @@ impl Transform {
     }
 
     pub fn forward(&self) -> Vec3 {
-        self.rotation * Vec3::Z
+        self.rotation * Vec3::NEG_Z
     }
 
     pub fn right(&self) -> Vec3 {
@@ -39,7 +39,7 @@ impl Transform {
     }
 
     pub fn back(&self) -> Vec3 {
-        self.rotation * Vec3::NEG_Z
+        self.rotation * Vec3::Z
     }
 
     pub fn left(&self) -> Vec3 {

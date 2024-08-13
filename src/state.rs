@@ -1,6 +1,7 @@
 use std::{rc::Rc, thread::current, time::SystemTime};
 
 use chrono::Utc;
+use egui::menu;
 use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
 use wgpu::{util::DeviceExt, Color};
@@ -254,8 +255,21 @@ impl<'a> State<'a> {
                 &view,
                 screen_descriptor,
                 |ctx| {
+
+                    egui::TopBottomPanel::top("my_panel").show(&ctx, |ui| {
+                        menu::bar(ui, |ui| {
+                            ui.menu_button("File", |ui| {
+                                if ui.button("Open").clicked() {
+                                    // …
+                                }
+                            });
+                        });
+                        
+                     });
+
                     egui::Window::new("").default_open(true)
                     .show(&ctx, |ui| {
+
                         ui.label(format!("Frametime: {}", self.frametime));
                         if ui.button("Screenshot").clicked() {
                             self.should_screenshot = true;
@@ -274,12 +288,14 @@ impl<'a> State<'a> {
                         let slider = egui::Slider::new(&mut self.camera_sphere_controller.current_index_y, 1..=max_y-1).text("Y Arc");
                         ui.add(slider);
 
-                        let slider = egui::Slider::new(&mut self.camera_sphere_controller.radius, 0.0..=1000.0).text("Radius");
+                        let slider = egui::Slider::new(&mut self.camera_sphere_controller.radius, 1.0..=1000.0).text("Radius");
                         ui.add(slider);
 
-                        ui.label(format!("Position: {}", self.camera.transform.position));
-                        ui.label(format!("Right: {}", self.camera.transform.right()));
-                        ui.label(format!("Up: {}", self.camera.transform.up()))
+                        ui.label(format!("Position: {:.2}", self.camera.transform.position));
+                        ui.label(format!("Right: {:.2}", self.camera.transform.right()));
+                        ui.label(format!("Up: {:.2}", self.camera.transform.up()));
+                        ui.label(format!("Look dir: {:.2}", self.camera.transform.forward()));
+                        ui.label(format!("Size: {:?}", self.window.inner_size()));
                     });
                 }
         );
