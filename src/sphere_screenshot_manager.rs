@@ -1,9 +1,9 @@
-use std::{fs::File, io::{BufWriter, Write}};
+use std::{fs::File, io::BufWriter};
 
 use glam::Vec3;
 use anyhow::Result;
 use serde::Serialize;
-use crate::{camera::Camera, camera_sphere_controller::{self, CameraSphereController}};
+use crate::{camera::Camera, camera_sphere_controller::CameraSphereController};
 
 pub struct SphereScreenshotManager {
     is_screenshotting: bool,

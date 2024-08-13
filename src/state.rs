@@ -1,12 +1,10 @@
-use std::{rc::Rc, thread::current, time::SystemTime};
-
-use chrono::Utc;
+use std::rc::Rc;
 use egui::menu;
 use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
 use wgpu::{util::DeviceExt, Color};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
-use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, camera_sphere_controller::{self, CameraSphereController}, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter, sphere_screenshot_manager::{self, SphereScreenshotManager}};
+use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, camera_sphere_controller::CameraSphereController, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter, sphere_screenshot_manager::SphereScreenshotManager};
 
 /// Handles and stores the state of the application. 
 /// Additionally holds data needed for rendering, but this should be moved into it's own struct in the future.

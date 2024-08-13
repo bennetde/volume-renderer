@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use glam::Vec3;
 
-use crate::{camera::Camera, screenshot::Screenshotter};
+use crate::camera::Camera;
 
 /// Defines an amount of position on a sphere where the camera can sit on.
 /// The sphere is divided on x horizontal divisions and y vertical divisions, giving x*y possible positions where the camera can sit.
@@ -15,6 +15,7 @@ pub struct CameraSphereController {
     pub origin: Vec3,
 }
 
+#[allow(unused)]
 impl CameraSphereController {
     pub fn new(y_divisions: u32, x_divisions: u32, origin: Vec3, radius: f32) -> Self {
         CameraSphereController {

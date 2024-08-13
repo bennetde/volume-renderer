@@ -68,6 +68,7 @@ impl CameraController {
         }
     }
 
+    #[allow(unused)]
     pub fn update_camera(&self, camera: &mut Camera, delta: f32) {
         if self.is_forward_pressed {
             camera.transform.position += camera.transform.forward() * self.speed * delta;
