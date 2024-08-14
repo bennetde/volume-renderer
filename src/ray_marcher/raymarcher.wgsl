@@ -128,7 +128,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
 
         // Use front-to-back alpha blending
         // color = alpha * color + (1.0 - alpha) * hitInfo.alpha * hitInfo.color;
-        var color: vec4<f32> = vec4<f32>(hitInfo.color, hitInfo.alpha / 1024.0);
+        var color: vec4<f32> = vec4<f32>(hitInfo.color, hitInfo.alpha / 128.0);
         color *= vec4<f32>(vec3<f32>(color.a), 1.0);
         // alpha = alpha + (1.0 - alpha) * hitInfo.alpha;
         res += color * (1.0 - res.a);

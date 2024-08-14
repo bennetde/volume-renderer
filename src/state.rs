@@ -73,7 +73,7 @@ impl<'a> State<'a> {
         //     .copied()
         //     .unwrap_or(surface_caps.formats[0]);
 
-        let surface_format = wgpu::TextureFormat::Rgba8UnormSrgb;
+        let surface_format = wgpu::TextureFormat::Rgba8Unorm;
 
         println!("{:?}", surface_caps.present_modes);
 
