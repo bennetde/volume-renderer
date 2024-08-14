@@ -154,7 +154,7 @@ impl<'a> State<'a> {
 
         let screenshotter = Screenshotter::new(&device, &config);
 
-        let camera_sphere_controller = CameraSphereController::new(8, 8, Vec3::ONE * 16.0, 100.0);
+        let camera_sphere_controller = CameraSphereController::new(8, 8, Vec3::ZERO, 100.0);
 
         let sphere_screenshot_manager = SphereScreenshotManager::new(&camera_sphere_controller);
 
@@ -225,7 +225,7 @@ impl<'a> State<'a> {
         // self.camera_controller.update_camera(&mut self.camera, 1.0/60.0);
         if self.free_move {
             self.camera_controller.update_camera(&mut self.camera, self.frametime as f32);
-            self.camera.transform.look_to(Vec3::ONE * 16.0, Vec3::Y);
+            self.camera.transform.look_to(Vec3::ZERO, Vec3::Y);
         } else {
             self.should_screenshot = self.sphere_screenshot_manager.update_camera(&mut self.camera_sphere_controller,&mut self.camera);
         }

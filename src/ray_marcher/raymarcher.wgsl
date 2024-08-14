@@ -168,8 +168,9 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
 fn scene(p: vec3<f32>) -> HitInfo {
     var output: HitInfo = HitInfo();
     let dimensions = voxel_grid.dimensions;
-    let p_trunc: vec3<i32> = vec3<i32>(trunc(p));
-    let fract: vec3<f32> = fract(p);
+    var p_r = p + vec3<f32>(dimensions) / 2.0;
+    let p_trunc: vec3<i32> = vec3<i32>(trunc(p_r));
+    let fract: vec3<f32> = fract(p_r);
     let pos: vec3<i32> = p_trunc;
 
     output.alpha = 0.0;
@@ -178,7 +179,7 @@ fn scene(p: vec3<f32>) -> HitInfo {
 
     // Check if the point is inside or outside the dimensions of the box
     // NOTE: This should be obsolete with the AABB Intersection Test
-    if p.x < 0.0 || p.y < 0.0 || p.z < 0.0 {
+    if p_r.x < 0.0 || p_r.y < 0.0 || p_r.z < 0.0 {
         return output;
     }
     if pos.x >= i32(dimensions.x) || pos.y >= i32(dimensions.y) || pos.z >= i32(dimensions.z) {
@@ -186,7 +187,7 @@ fn scene(p: vec3<f32>) -> HitInfo {
     }
 
     // Get relative coordinates inside the box and sample the volume texture
-    let texture_coords = p / vec3<f32>(dimensions);
+    let texture_coords = p_r / vec3<f32>(dimensions);
     let sample_result = textureSample(voxel_texture, voxel_texture_sampler, texture_coords);
 
     // Get relative color relative to a 1x1x1 grid
@@ -194,13 +195,13 @@ fn scene(p: vec3<f32>) -> HitInfo {
 
     // Adjust alpha for a more interesting appearance
     output.alpha = sample_result.a;
-    // if output.alpha <= 0.5 {
-    //     output.alpha = 0.0;
-    // } else if output.alpha >= 0.9 {
-    //     output.alpha = 1.0;
-    // } else {
-    //     output.alpha = output.alpha / 64.0;
-    // }
+    if output.alpha <= 0.5 {
+        output.alpha = 0.0;
+    } else if output.alpha >= 0.9 {
+        output.alpha = 1.0;
+    } else {
+        // output.alpha = output.alpha / 64.0;
+    }
 
     output.hit = true;
     output.color = sample_result.rgb;
@@ -212,8 +213,8 @@ fn scene(p: vec3<f32>) -> HitInfo {
 // Returns if the intersection hit, the minimum and maximum distance the ray has to travel for the intersections with the box's boundaries.
 fn aabb_intersect(ro: vec3<f32>, rd: vec3<f32>, box_size: vec3<u32>) -> AABBIntersection {
     var intersection = AABBIntersection();
-    let min = vec3<f32>(0.0);
-    let max = vec3<f32>(box_size);
+    let min = vec3<f32>(box_size) / -2.0;
+    let max = vec3<f32>(box_size) / 2.0;
 
     var t_min = (min.x - ro.x) / rd.x;
     var t_max = (max.x - ro.x) / rd.x;
