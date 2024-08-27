@@ -107,40 +107,47 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
 
     // Set initial colors and alpha for alpha blending
     var res = vec4<f32>(0.0);
-    var alpha = 0.0;
+    var color = vec3<f32>(0.0);
+    var alpha = 1.0;
 
     output.min_distance_to_scene = 10000.0;
 
     // Check if the ray ever intersects the volume texture and exit out early if it doesn't
     let aabb_intersection = aabb_intersect(ro, rd, voxel_grid.dimensions);
     if !aabb_intersection.intersects {
-        output.color = vec4<f32>(0.0);
+        output.color = vec4<f32>(0.0, 0.0, 0.0, 0.0);
         return output;
     }
 
     // Set initial ray distance to the first point where the ray intersects with the volume
-    var dt = aabb_intersection.t_min;
-
+    // var dt = aabb_intersection.t_min;
+    var dt = 0.0;
     for(var i = 0; i < 100000; i += 1) {
         // Calculate next position & then sample the scene at that point
         let p: vec3<f32> = ro + rd * dt;
         let hitInfo = scene(p);
 
         // Use front-to-back alpha blending
-        // color = alpha * color + (1.0 - alpha) * hitInfo.alpha * hitInfo.color;
-        var color: vec4<f32> = vec4<f32>(hitInfo.color, hitInfo.alpha / 128.0);
-        color *= vec4<f32>(vec3<f32>(color.a), 1.0);
-        // alpha = alpha + (1.0 - alpha) * hitInfo.alpha;
-        res += color * (1.0 - res.a);
+        var alpha_src = hitInfo.alpha;
+        var color_src = hitInfo.color;
+        color = alpha * (alpha_src * color_src) + color;
+        alpha = (1.0 - alpha_src) * alpha;
+        // var color: vec4<f32> = vec4<f32>(hitInfo.color, hitInfo.alpha);
+        // color = alpha * (hitInfo.alpha * hitInfo.color) + color;
+        // alpha = (1 - hitInfo.alpha) * alpha;
+
+        // var color: vec4<f32> = vec4<f32>(hitInfo.color, hitInfo.alpha * 1000.0);
+        // color *= vec4<f32>(vec3<f32>(color.a), 1.0);
+        // res += color * (1.0 - res.a);
         // Debugging: Uncomment to highlight center as a red sphere
         // if length(vec3<f32>(16.0) - p) < 0.5 {
-        //     output.color = vec3<f32>(1.0,0.0, 0.0);
+        //     output.color = vec4<f32>(1.0,0.0, 0.0, 1.0);
         //     alpha = 1.0;
         //     return output;
         // }
 
         // When the alpha reaches 1.0, no more color from behind has an influence on the output image so we stop raymarching
-        if(res.a >= 1.0) {
+        if(alpha <= 0.0) {
             break;
         }
 
@@ -159,7 +166,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     // color = alpha * color + (1.0 - alpha) * vec3<f32>(0.0);
     // alpha = alpha + (1.0 - alpha);
 
-    output.color = res;
+    output.color = vec4<f32>(color, 1.0 - alpha);
     output.distance = dt;
     return output;
 }
@@ -195,13 +202,13 @@ fn scene(p: vec3<f32>) -> HitInfo {
 
     // Adjust alpha for a more interesting appearance
     output.alpha = sample_result.a;
-    if output.alpha <= 0.5 {
-        output.alpha = 0.0;
-    } else if output.alpha >= 0.9 {
-        output.alpha = 1.0;
-    } else {
-        // output.alpha = output.alpha / 64.0;
-    }
+    // if output.alpha <= 0.5 {
+    //     output.alpha = 0.0;
+    // } else if output.alpha >= 0.9 {
+    //     output.alpha = 1.0;
+    // } else {
+    //     // output.alpha = output.alpha / 64.0;
+    // }
 
     output.hit = true;
     output.color = sample_result.rgb;

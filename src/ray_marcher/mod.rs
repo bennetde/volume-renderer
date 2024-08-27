@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use glam::UVec3;
 use wgpu::{BindGroup, Color, CommandBuffer, Device, FragmentState, PrimitiveState, Queue, RenderPipeline, RenderPipelineDescriptor, SurfaceConfiguration, TextureView, VertexState};
-use crate::{model::{DrawModel, Model}, vertex::Vertex, voxel::{grid::VoxelGrid, init::perlin::init_grid_buffer_perlin}};
+use crate::{model::{DrawModel, Model}, vertex::Vertex, voxel::{grid::{self, VoxelGrid}, init::{perlin::init_grid_buffer_perlin, pyramid::init_grid_buffer_pyramid, sphere::init_grid_buffer_sphere}}};
 
 
 const VERTICES: &[Vertex] = &[
@@ -26,9 +26,11 @@ impl RayMarcher {
     pub fn new(device: &Device, queue: &Queue, config: &SurfaceConfiguration, camera_bind_group: Rc<BindGroup>) -> Self {
         
         let shader = device.create_shader_module(wgpu::include_wgsl!("raymarcher.wgsl"));
-        let mut voxel_grid = VoxelGrid::new(UVec3::new(32,32,32), &device, &queue);
+        let mut voxel_grid = VoxelGrid::new(UVec3::new(64,64,64), &device, &queue);
         // voxel_grid.set_color(UVec3::ZERO, Vec4::new(1.0, 0.0, 0.0, 1.0));
         init_grid_buffer_perlin(&mut voxel_grid);
+        // init_grid_buffer_pyramid(&mut voxel_grid);
+        // init_grid_buffer_sphere(&mut voxel_grid, 31.0);
         voxel_grid.update_buffer(&queue);
 
         // --- UNIFORMS ---
@@ -119,7 +121,7 @@ impl RayMarcher {
                 view: &view,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(Color::BLACK),
+                    load: wgpu::LoadOp::Clear(Color::TRANSPARENT),
                     store: wgpu::StoreOp::Store
                 }
             })],

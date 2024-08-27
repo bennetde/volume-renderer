@@ -2,6 +2,8 @@ use std::rc::Rc;
 use egui::menu;
 use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
+use pollster::FutureExt;
+use rfd::{AsyncFileDialog, FileDialog};
 use wgpu::{util::DeviceExt, Color};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, camera_sphere_controller::CameraSphereController, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter, sphere_screenshot_manager::SphereScreenshotManager};
@@ -265,7 +267,18 @@ impl<'a> State<'a> {
                         menu::bar(ui, |ui| {
                             ui.menu_button("File", |ui| {
                                 if ui.button("Open NetCDF").clicked() {
-                                    // …
+                                    let future = async {
+                                        let file = AsyncFileDialog::new()
+                                            .add_filter("NetCDF", &["nc"])
+                                            .set_directory(std::env::current_dir().unwrap())
+                                            .pick_file()
+                                            .await;
+
+                                        if let Some(file_handle) = file {
+                                            crate::netcdf::open_voxel_grid(file_handle.path().to_str().unwrap(), &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
+                                        }
+                                    };
+                                    pollster::block_on(future);
                                 }
                                 if ui.button("Export NetCDF").clicked() {
                                     crate::netcdf::write_voxel_grid("test.nc", &self.ray_marcher.voxel_grid).unwrap();
