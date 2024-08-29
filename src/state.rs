@@ -101,7 +101,7 @@ impl<'a> State<'a> {
         surface.configure(&device, &config);
 
         let mut camera = Camera::new(config.width as f32 / config.height as f32);
-        let camera_controller = CameraController::new(100.0);
+        let camera_controller = CameraController::new(20.0);
 
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&mut camera);

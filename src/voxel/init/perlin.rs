@@ -13,6 +13,7 @@ pub fn init_grid_buffer_perlin(grid: &mut VoxelGrid) {
                 pos /= 10.0;
                 let alpha = (noise.get(pos.to_array()) as f32 + 1.0) / 2.0;
                 let alpha = (alpha * 255.0) as u8;
+                // let alpha = 255;
                 // println!("{} is {}", UVec3::new(x,y,z), alpha);
                 grid.set_color(UVec3::new(x,y,z), [alpha, alpha, alpha, alpha])
             }

@@ -28,9 +28,9 @@ impl RayMarcher {
         let shader = device.create_shader_module(wgpu::include_wgsl!("raymarcher.wgsl"));
         let mut voxel_grid = VoxelGrid::new(UVec3::new(64,64,64), &device, &queue);
         // voxel_grid.set_color(UVec3::ZERO, Vec4::new(1.0, 0.0, 0.0, 1.0));
-        init_grid_buffer_perlin(&mut voxel_grid);
+        // init_grid_buffer_perlin(&mut voxel_grid);
         // init_grid_buffer_pyramid(&mut voxel_grid);
-        // init_grid_buffer_sphere(&mut voxel_grid, 31.0);
+        init_grid_buffer_sphere(&mut voxel_grid, 20.0);
         voxel_grid.update_buffer(&queue);
 
         // --- UNIFORMS ---

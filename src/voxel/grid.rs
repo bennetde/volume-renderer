@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use glam::UVec3;
+use glam::{UVec3, UVec4, Vec3Swizzles};
 use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, Queue, ShaderStages};
 
 use crate::texture_3d::Texture3D;
@@ -20,9 +20,11 @@ pub struct VoxelGrid {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct VoxelGridUniform {
-    dimensions: [u32; 3],
+    dimensions: [u32; 4],
+    box_min: [f32; 4],
+    box_size: [f32; 4],
     // Buffer is needed for byte alignment in wgsl and has no further use
-    buffer: u32,
+    buffer: [u32; 4],
 }
 
 impl VoxelGrid {
@@ -210,8 +212,10 @@ impl IndexMut<UVec3> for VoxelGrid {
 impl VoxelGridUniform {
     pub fn new(dimensions: UVec3) -> Self {
         Self {
-            dimensions: dimensions.to_array(),
-            buffer: 0,
+            dimensions: dimensions.xyzx().to_array(),
+            box_min: [-0.5, -0.5, -0.5, 0.0],
+            box_size: [1.0,1.0,1.0, 0.0],
+            buffer: [0; 4],
         }
     }
 }

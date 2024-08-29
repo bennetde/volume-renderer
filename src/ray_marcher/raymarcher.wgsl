@@ -12,9 +12,11 @@ struct Voxel {
 
 // VoxelGrid storing how large the Voxel Grid is.
 struct VoxelGrid {
-    dimensions: vec3<u32>,
+    dimensions: vec4<u32>,
+    box_min: vec4<f32>,
+    box_size: vec4<f32>,
     // Buffer is only needed for WGSL byte alignment and is not used further
-    buffer: u32
+    buffer: vec4<u32>
 }
 
 struct VertexInput {
@@ -108,12 +110,12 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     // Set initial colors and alpha for alpha blending
     var res = vec4<f32>(0.0);
     var color = vec3<f32>(0.0);
-    var alpha = 1.0;
+    var alpha = 0.0;
 
     output.min_distance_to_scene = 10000.0;
 
     // Check if the ray ever intersects the volume texture and exit out early if it doesn't
-    let aabb_intersection = aabb_intersect(ro, rd, voxel_grid.dimensions);
+    let aabb_intersection = aabb_intersect(ro, rd, voxel_grid.box_min.xyz, voxel_grid.box_size.xyz);
     if !aabb_intersection.intersects {
         output.color = vec4<f32>(0.0, 0.0, 0.0, 0.0);
         return output;
@@ -128,10 +130,12 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         let hitInfo = scene(p);
 
         // Use front-to-back alpha blending
-        var alpha_src = hitInfo.alpha;
+        var alpha_src = 1.0 - exp(-hitInfo.alpha * 0.01 * 1.0);
+        // var alpha_src = hitInfo.alpha / 2000.0;
         var color_src = hitInfo.color;
-        color = alpha * (alpha_src * color_src) + color;
-        alpha = (1.0 - alpha_src) * alpha;
+        color = color + (1.0 - alpha) * alpha_src * color_src;
+        alpha = alpha + (1.0 - alpha) * alpha_src;
+
         // var color: vec4<f32> = vec4<f32>(hitInfo.color, hitInfo.alpha);
         // color = alpha * (hitInfo.alpha * hitInfo.color) + color;
         // alpha = (1 - hitInfo.alpha) * alpha;
@@ -147,14 +151,12 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         // }
 
         // When the alpha reaches 1.0, no more color from behind has an influence on the output image so we stop raymarching
-        if(alpha <= 0.0) {
+        if(alpha >= 1.0) {
             break;
         }
 
-
-
         // Increase distance for the next sampling step
-        dt += 0.1;
+        dt += 0.01;
         output.steps = output.steps + 1;
 
         if dt >= aabb_intersection.t_max {
@@ -166,7 +168,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     // color = alpha * color + (1.0 - alpha) * vec3<f32>(0.0);
     // alpha = alpha + (1.0 - alpha);
 
-    output.color = vec4<f32>(color, 1.0 - alpha);
+    output.color = vec4<f32>(color, alpha);
     output.distance = dt;
     return output;
 }
@@ -174,41 +176,39 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
 // Samples the scene at a specific point in space
 fn scene(p: vec3<f32>) -> HitInfo {
     var output: HitInfo = HitInfo();
-    let dimensions = voxel_grid.dimensions;
-    var p_r = p + vec3<f32>(dimensions) / 2.0;
+    let box_min = voxel_grid.box_min.xyz;
+    let box_max = voxel_grid.box_min.xyz + voxel_grid.box_size.xyz;
+    let dimensions = voxel_grid.dimensions.xyz;
+    var p_r = p + vec3<f32>(voxel_grid.box_size.xyz);
     let p_trunc: vec3<i32> = vec3<i32>(trunc(p_r));
     let fract: vec3<f32> = fract(p_r);
     let pos: vec3<i32> = p_trunc;
 
+    let rel_p = (p - voxel_grid.box_min.xyz) / voxel_grid.box_size.xyz;
+
+
     output.alpha = 0.0;
-    output.color = vec3<f32>(1.0);
+    output.color = vec3<f32>(0.0);
 
 
     // Check if the point is inside or outside the dimensions of the box
     // NOTE: This should be obsolete with the AABB Intersection Test
-    if p_r.x < 0.0 || p_r.y < 0.0 || p_r.z < 0.0 {
+    if p.x < box_min.x || p.y < box_min.y || p.z < box_min.z {
         return output;
     }
-    if pos.x >= i32(dimensions.x) || pos.y >= i32(dimensions.y) || pos.z >= i32(dimensions.z) {
+    if p.x >= box_max.x || p.y >= box_max.y || p.z >= box_max.z {
         return output;
     }
 
     // Get relative coordinates inside the box and sample the volume texture
-    let texture_coords = p_r / vec3<f32>(dimensions);
-    let sample_result = textureSample(voxel_texture, voxel_texture_sampler, texture_coords);
+    // let texture_coords = p_r / vec3<f32>(dimensions);
+    let sample_result = textureSample(voxel_texture, voxel_texture_sampler, rel_p);
 
     // Get relative color relative to a 1x1x1 grid
-    // var relative_color = vec3<f32>(p_trunc);
-
-    // Adjust alpha for a more interesting appearance
+    // var sample_result = vec3<f32>(rel_p);
     output.alpha = sample_result.a;
-    // if output.alpha <= 0.5 {
-    //     output.alpha = 0.0;
-    // } else if output.alpha >= 0.9 {
-    //     output.alpha = 1.0;
-    // } else {
-    //     // output.alpha = output.alpha / 64.0;
-    // }
+    // Adjust alpha for a more interesting appearance
+    // output.alpha = sample_result.a;
 
     output.hit = true;
     output.color = sample_result.rgb;
@@ -218,10 +218,10 @@ fn scene(p: vec3<f32>) -> HitInfo {
 // Adapted from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
 // Checks for a intersection with a AABB. The origin is always at (0,0,0) and the furthest corner is at (box_size.x, box_size.y, box_size.z).
 // Returns if the intersection hit, the minimum and maximum distance the ray has to travel for the intersections with the box's boundaries.
-fn aabb_intersect(ro: vec3<f32>, rd: vec3<f32>, box_size: vec3<u32>) -> AABBIntersection {
+fn aabb_intersect(ro: vec3<f32>, rd: vec3<f32>, box_min: vec3<f32>, box_size: vec3<f32>) -> AABBIntersection {
     var intersection = AABBIntersection();
-    let min = vec3<f32>(box_size) / -2.0;
-    let max = vec3<f32>(box_size) / 2.0;
+    let min = box_min;
+    let max = box_min + box_size;
 
     var t_min = (min.x - ro.x) / rd.x;
     var t_max = (max.x - ro.x) / rd.x;
