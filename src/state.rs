@@ -335,6 +335,11 @@ impl<'a> State<'a> {
                         ui.label(format!("Look dir: {:.2}", self.camera.transform.forward()));
                         ui.label(format!("Size: {:?}", self.window.inner_size()));
                         ui.checkbox(&mut self.free_move, "Free-Move");
+
+                        let slider = egui::Slider::new(&mut self.ray_marcher.voxel_grid.attenuation, 0.0..=100.0).text("Attenuation");
+                        if ui.add(slider).changed() {
+                            self.ray_marcher.voxel_grid.update_voxel_grid_buffer(&self.queue);
+                        }
                     });
                 }
         );

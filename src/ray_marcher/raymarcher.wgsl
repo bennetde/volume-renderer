@@ -15,8 +15,8 @@ struct VoxelGrid {
     dimensions: vec4<u32>,
     box_min: vec4<f32>,
     box_size: vec4<f32>,
-    // Buffer is only needed for WGSL byte alignment and is not used further
-    buffer: vec4<u32>
+    // Buffer is only needed for WGSL byte alignment and is not used further,
+    buffer: vec4<f32>
 }
 
 struct VertexInput {
@@ -130,7 +130,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         let hitInfo = scene(p);
 
         // Use front-to-back alpha blending
-        var alpha_src = 1.0 - exp(-hitInfo.alpha * 0.01 * 1.0);
+        var alpha_src = 1.0 - exp(-hitInfo.alpha * 0.01 * voxel_grid.buffer[0]);
         // var alpha_src = hitInfo.alpha / 2000.0;
         var color_src = hitInfo.color;
         color = color + (1.0 - alpha) * alpha_src * color_src;

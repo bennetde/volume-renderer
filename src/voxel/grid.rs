@@ -14,7 +14,9 @@ pub struct VoxelGrid {
     pub voxels_bind_group: BindGroup,
     pub voxel_texture: Texture3D,
     pub voxel_texture_bind_group_layout: BindGroupLayout,
-    pub voxel_texture_bind_group: BindGroup
+    pub voxel_texture_bind_group: BindGroup,
+    voxel_grid_buffer: wgpu::Buffer,
+    pub attenuation: f32,
 }
 
 #[repr(C)]
@@ -24,7 +26,7 @@ pub struct VoxelGridUniform {
     box_min: [f32; 4],
     box_size: [f32; 4],
     // Buffer is needed for byte alignment in wgsl and has no further use
-    buffer: [u32; 4],
+    buffer: [f32; 4],
 }
 
 impl VoxelGrid {
@@ -67,7 +69,7 @@ impl VoxelGrid {
 
         let voxel_grid_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("voxel_grid_buffer_init_descriptor_voxel_grid"),
-            contents: bytemuck::cast_slice(&[VoxelGridUniform::new(dimensions)]),
+            contents: bytemuck::cast_slice(&[VoxelGridUniform::new(dimensions, 1.0)]),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
         });
         
@@ -150,7 +152,9 @@ impl VoxelGrid {
             voxels_bind_group,
             voxel_texture: texture,
             voxel_texture_bind_group_layout,
-            voxel_texture_bind_group
+            voxel_texture_bind_group,
+            voxel_grid_buffer,
+            attenuation: 1.0,
         }
     }
 
@@ -191,6 +195,10 @@ impl VoxelGrid {
             size
         );
     }
+
+    pub fn update_voxel_grid_buffer(&mut self, queue: &Queue) {
+        queue.write_buffer(&self.voxel_grid_buffer, 0, bytemuck::cast_slice(&[VoxelGridUniform::new(self.dimensions, self.attenuation)]));
+    }
 }
 
 impl Index<UVec3> for VoxelGrid {
@@ -210,12 +218,12 @@ impl IndexMut<UVec3> for VoxelGrid {
 }
 
 impl VoxelGridUniform {
-    pub fn new(dimensions: UVec3) -> Self {
+    pub fn new(dimensions: UVec3, attenuation: f32) -> Self {
         Self {
             dimensions: dimensions.xyzx().to_array(),
             box_min: [-0.5, -0.5, -0.5, 0.0],
             box_size: [1.0,1.0,1.0, 0.0],
-            buffer: [0; 4],
+            buffer: [attenuation; 4],
         }
     }
 }
