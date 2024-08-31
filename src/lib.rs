@@ -12,7 +12,7 @@ mod voxel;
 mod gui;
 mod screenshot;
 mod sphere_screenshot_manager;
-mod netcdf;
+mod loaders;
 
 use std::time::Instant;
 

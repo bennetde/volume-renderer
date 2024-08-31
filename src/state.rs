@@ -275,13 +275,29 @@ impl<'a> State<'a> {
                                             .await;
 
                                         if let Some(file_handle) = file {
-                                            crate::netcdf::open_voxel_grid(file_handle.path().to_str().unwrap(), &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
+                                            crate::loaders::netcdf::open_voxel_grid(file_handle.path().to_str().unwrap(), &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
                                         }
                                     };
                                     pollster::block_on(future);
                                 }
+
+                                if ui.button("Open DAT").clicked() {
+                                    let future = async {
+                                        let file: Option<rfd::FileHandle> = AsyncFileDialog::new()
+                                            .add_filter("DAT", &["dat"])
+                                            .set_directory(std::env::current_dir().unwrap())
+                                            .pick_file()
+                                            .await;
+
+                                        if let Some(file_handle) = file {
+                                            crate::loaders::dat::open_voxel_grid(file_handle.path().to_str().unwrap(), &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
+                                        }
+                                    };
+                                    pollster::block_on(future);
+                                }
+
                                 if ui.button("Export NetCDF").clicked() {
-                                    crate::netcdf::write_voxel_grid("test.nc", &self.ray_marcher.voxel_grid).unwrap();
+                                    crate::loaders::netcdf::write_voxel_grid("test.nc", &self.ray_marcher.voxel_grid).unwrap();
                                 }
                             });
                         });
