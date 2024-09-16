@@ -92,6 +92,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Center NDC coordinates to the center of the screen
     var screen_position = vec4<f32>(in.tex_coords.x, in.tex_coords.y, 1.0, 1.0);
     screen_position -= vec4<f32>(0.5, 0.5, 0.0, 0.0);
+    screen_position *= vec4<f32>(2.0, 2.0, 1.0, 1.0);
 
     // Using the screenposition and the inverse view-projection-matrix, calculate the direction of that particular pixel
     let world_position = camera.inverse_view_proj * screen_position;
