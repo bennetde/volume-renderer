@@ -82,7 +82,7 @@ pub async fn run() {
                             Err(e) => eprintln!("{:?}", e),
                         }
                         
-                        state.set_frametime(time.elapsed().as_secs_f64());
+                        state.set_frametime(time.elapsed());
                     }
 
                     _ => {}

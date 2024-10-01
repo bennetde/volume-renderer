@@ -9,7 +9,7 @@ use super::voxel::Voxel;
 pub struct VoxelGrid {
     voxels: Vec<Voxel>,
     pub dimensions: UVec3,
-    voxels_buffer: wgpu::Buffer,
+    // voxels_buffer: wgpu::Buffer,
     pub voxels_bind_group_layout: BindGroupLayout,
     pub voxels_bind_group: BindGroup,
     pub voxel_texture: Texture3D,
@@ -44,16 +44,16 @@ impl VoxelGrid {
                     },
                     count: None
                 },
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer { 
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false, 
-                        min_binding_size: None 
-                    },
-                    count: None
-                },
+                // BindGroupLayoutEntry {
+                //     binding: 1,
+                //     visibility: ShaderStages::FRAGMENT,
+                //     ty: wgpu::BindingType::Buffer { 
+                //         ty: wgpu::BufferBindingType::Storage { read_only: true },
+                //         has_dynamic_offset: false, 
+                //         min_binding_size: None 
+                //     },
+                //     count: None
+                // },
 
             ]
         });
@@ -61,11 +61,11 @@ impl VoxelGrid {
         let voxels: Vec<Voxel> = vec![Voxel::default(); dimensions.x as usize * dimensions.y as usize * dimensions.z as usize];
 
 
-        let voxels_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("voxel_grid_buffer_init_descriptor_voxels"),
-            contents: bytemuck::cast_slice(&voxels),
-            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST
-        });
+        // let voxels_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        //     label: Some("voxel_grid_buffer_init_descriptor_voxels"),
+        //     contents: bytemuck::cast_slice(&voxels),
+        //     usage: BufferUsages::STORAGE | BufferUsages::COPY_DST
+        // });
 
         let voxel_grid_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("voxel_grid_buffer_init_descriptor_voxel_grid"),
@@ -77,16 +77,16 @@ impl VoxelGrid {
             label: Some("voxel_grid_bind_group_descriptor_voxels"),
             layout: &layout,
             entries: &[
-                BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Buffer(
-                        wgpu::BufferBinding { 
-                            buffer: &voxels_buffer, 
-                            offset: 0, 
-                            size: None 
-                        }
-                    )
-                },
+                // BindGroupEntry {
+                //     binding: 1,
+                //     resource: wgpu::BindingResource::Buffer(
+                //         wgpu::BufferBinding { 
+                //             buffer: &voxels_buffer, 
+                //             offset: 0, 
+                //             size: None 
+                //         }
+                //     )
+                // },
 
                 BindGroupEntry {
                     binding: 0,
@@ -148,7 +148,7 @@ impl VoxelGrid {
             voxels,
             dimensions,
             voxels_bind_group_layout: layout,
-            voxels_buffer,
+            // voxels_buffer,
             voxels_bind_group,
             voxel_texture: texture,
             voxel_texture_bind_group_layout,
@@ -178,7 +178,7 @@ impl VoxelGrid {
             depth_or_array_layers: self.dimensions.z,
         };
 
-        queue.write_buffer(&self.voxels_buffer, 0, bytemuck::cast_slice(&self.voxels));
+        // queue.write_buffer(&self.voxels_buffer, 0, bytemuck::cast_slice(&self.voxels));
         queue.write_texture(
             wgpu::ImageCopyTexture {
                 aspect: wgpu::TextureAspect::All,
@@ -219,10 +219,16 @@ impl IndexMut<UVec3> for VoxelGrid {
 
 impl VoxelGridUniform {
     pub fn new(dimensions: UVec3, attenuation: f32) -> Self {
+
+        let max_dimension = u32::max(dimensions.x, u32::max(dimensions.y, dimensions.z));
+
+        let box_size = dimensions.as_vec3() / max_dimension as f32;
+        let box_min = -box_size / 2.0;
+
         Self {
             dimensions: dimensions.xyzx().to_array(),
-            box_min: [-0.5, -0.5, -0.5, 0.0],
-            box_size: [1.0,1.0,1.0, 0.0],
+            box_min: [box_min.x, box_min.y, box_min.z, 0.0],
+            box_size: [box_size.x, box_size.y, box_size.z, 0.0],
             buffer: [attenuation; 4],
         }
     }

@@ -42,15 +42,15 @@ pub fn open_voxel_grid(path: &str, grid: &mut VoxelGrid, device: &Device, queue:
     let mut raw_file = File::open(path)?;
     let mut byte = [0u8; 1];
     *grid = VoxelGrid::new(resolution, &device, &queue);
-    for x in 0..resolution.x {
+    for z in 0..resolution.z {
         for y in 0..resolution.y {
-            for z in 0..resolution.z {
+            for x in 0..resolution.x {
                 raw_file.read(&mut byte)?;
                 grid.set_color(UVec3::new(x,y,z), [byte[0], byte[0], byte[0], byte[0]])
             }
         }
+        println!("Loaded {} out of {} layers", z, resolution.z);
     }
-
     grid.update_buffer(&queue);
     Ok(())
 }

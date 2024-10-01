@@ -86,6 +86,7 @@ var voxel_texture: texture_3d<f32>;
 @group(2) @binding(1)
 var voxel_texture_sampler: sampler;
 
+const MAX_STEP_AMOUNT: i32 = 5000;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
@@ -96,12 +97,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     // Using the screenposition and the inverse view-projection-matrix, calculate the direction of that particular pixel
     let world_position = camera.inverse_view_proj * screen_position;
-    let dir: vec3<f32> = world_position.xyz;
+    let dir: vec3<f32> = normalize(world_position.xyz);
     var ro: vec3<f32> = camera.position.xyz;
 
     // Raymarch into the scene
     let raymarch_result = raymarch(ro, dir);
+    // let rel_red = vec4<f32>(f32(raymarch_result.steps) / f32(MAX_STEP_AMOUNT), 0.0, 0.0, 1.0);
     return vec4<f32>(raymarch_result.color);
+    // return rel_red;
 }
 
 // Raymarch function that takes a ray's origin and its direction and samples the scene at specific points along the ray's direction
@@ -112,6 +115,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     var res = vec4<f32>(0.0);
     var color = vec3<f32>(0.0);
     var alpha = 0.0;
+    let step_size = 0.001;
 
     output.min_distance_to_scene = 10000.0;
 
@@ -123,15 +127,15 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     }
 
     // Set initial ray distance to the first point where the ray intersects with the volume
-    // var dt = aabb_intersection.t_min;
-    var dt = 0.0;
-    for(var i = 0; i < 100000; i += 1) {
+    var dt = aabb_intersection.t_min;
+    // var dt = 0.0;
+    for(var i = 0; i < MAX_STEP_AMOUNT; i += 1) {
         // Calculate next position & then sample the scene at that point
         let p: vec3<f32> = ro + rd * dt;
         let hitInfo = scene(p);
 
         // Use front-to-back alpha blending
-        var alpha_src = 1.0 - exp(-hitInfo.alpha * 0.01 * voxel_grid.buffer[0]);
+        var alpha_src = 1.0 - exp(-hitInfo.alpha * step_size * voxel_grid.buffer[0]);
         // var alpha_src = hitInfo.alpha / 2000.0;
         var color_src = hitInfo.color;
         color = color + (1.0 - alpha) * alpha_src * color_src;
@@ -157,7 +161,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         }
 
         // Increase distance for the next sampling step
-        dt += 0.01;
+        dt += step_size;
         output.steps = output.steps + 1;
 
         if dt >= aabb_intersection.t_max {

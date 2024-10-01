@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, time::Duration};
 use egui::menu;
 use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
@@ -27,7 +27,7 @@ pub struct State<'a> {
     egui_renderer: EguiRenderer,
     screenshotter: Screenshotter,
     sphere_screenshot_manager: SphereScreenshotManager,
-    frametime: f64,
+    frametime: Duration,
     should_screenshot: bool,
     free_move: bool,
 }
@@ -55,8 +55,9 @@ impl<'a> State<'a> {
         ).await.unwrap();
 
         let mut limits = wgpu::Limits::default();
-        limits.max_buffer_size = 536870912;
-        limits.max_storage_buffer_binding_size = 536870912;
+        limits.max_buffer_size = 18446744073709551615;
+        limits.max_storage_buffer_binding_size = 2147483648;
+        limits.max_texture_dimension_3d = 4096;
         
 
         let (device, queue) = adapter.request_device(
@@ -178,7 +179,7 @@ impl<'a> State<'a> {
             screenshotter,
             sphere_screenshot_manager,
             should_screenshot: false,
-            frametime: 0.0,
+            frametime: Duration::ZERO,
             free_move: true,
         }
     }
@@ -226,7 +227,7 @@ impl<'a> State<'a> {
     pub fn update(&mut self) {
         // self.camera_controller.update_camera(&mut self.camera, 1.0/60.0);
         if self.free_move {
-            self.camera_controller.update_camera(&mut self.camera, self.frametime as f32);
+            self.camera_controller.update_camera(&mut self.camera, self.frametime.as_secs_f32() as f32);
             self.camera.transform.look_to(Vec3::ZERO, Vec3::Y);
         } else {
             self.should_screenshot = self.sphere_screenshot_manager.update_camera(&mut self.camera_sphere_controller,&mut self.camera);
@@ -307,7 +308,7 @@ impl<'a> State<'a> {
                     egui::Window::new("").default_open(true)
                     .show(&ctx, |ui| {
 
-                        ui.label(format!("Frametime: {}", self.frametime));
+                        ui.label(format!("Frametime: {}ms", self.frametime.as_millis()));
                         if ui.button("Screenshot").clicked() {
                             self.should_screenshot = true;
                         }
@@ -366,7 +367,7 @@ impl<'a> State<'a> {
         Ok(())
     }
 
-    pub fn set_frametime(&mut self, frametime: f64) {
+    pub fn set_frametime(&mut self, frametime: Duration) {
         self.frametime = frametime;
     }
 }
