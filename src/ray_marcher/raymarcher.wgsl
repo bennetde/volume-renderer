@@ -19,6 +19,13 @@ struct VoxelGrid {
     buffer: vec4<f32>
 }
 
+struct TransferFunctionColors {
+    color_a: vec4<f32>,
+    color_b: vec4<f32>,
+    color_c: vec4<f32>,
+    use_transfer_function: vec4<bool>
+}
+
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
@@ -73,7 +80,7 @@ var<uniform> camera: CameraUniform;
 // Obsolete
 // TODO: Remove this as it wastes a lot of VRAM and is already stored in the voxel texture
 @group(1) @binding(1)
-var<storage, read> voxels: array<Voxel>;
+var<uniform> transform_function_colors: TransferFunctionColors;
 
 // VoxelGrid information that tells us how large the volume is
 @group(1) @binding(0)
@@ -92,8 +99,8 @@ const MAX_STEP_AMOUNT: i32 = 5000;
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Center NDC coordinates to the center of the screen
     var screen_position = vec4<f32>(in.tex_coords.x, in.tex_coords.y, 1.0, 1.0);
-    screen_position -= vec4<f32>(0.5, 0.5, 0.0, 0.0);
     screen_position *= vec4<f32>(2.0, 2.0, 1.0, 1.0);
+    screen_position -= vec4<f32>(1.0, 1.0, 0.0, 0.0);
 
     // Using the screenposition and the inverse view-projection-matrix, calculate the direction of that particular pixel
     let world_position = camera.inverse_view_proj * screen_position;
@@ -105,6 +112,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // let rel_red = vec4<f32>(f32(raymarch_result.steps) / f32(MAX_STEP_AMOUNT), 0.0, 0.0, 1.0);
     return vec4<f32>(raymarch_result.color);
     // return rel_red;
+    // return screen_position;
 }
 
 // Raymarch function that takes a ray's origin and its direction and samples the scene at specific points along the ray's direction
@@ -118,7 +126,6 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
     let step_size = 0.001;
 
     output.min_distance_to_scene = 10000.0;
-
     // Check if the ray ever intersects the volume texture and exit out early if it doesn't
     let aabb_intersection = aabb_intersect(ro, rd, voxel_grid.box_min.xyz, voxel_grid.box_size.xyz);
     if !aabb_intersection.intersects {
@@ -134,10 +141,19 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         let p: vec3<f32> = ro + rd * dt;
         let hitInfo = scene(p);
 
+        let color_ab_mix = mix(transform_function_colors.color_a.rgb, transform_function_colors.color_b.rgb, remap(hitInfo.alpha, 0.0, 0.5, 0.0, 1.0));
+        let color_bc_mix = mix(transform_function_colors.color_b.rgb, transform_function_colors.color_c.rgb, remap(hitInfo.alpha, 0.5, 1.0, 0.0, 1.0));
+        let transfer_function_color = mix(color_ab_mix, color_bc_mix, step(0.5, hitInfo.alpha));
+
         // Use front-to-back alpha blending
         var alpha_src = 1.0 - exp(-hitInfo.alpha * step_size * voxel_grid.buffer[0]);
         // var alpha_src = hitInfo.alpha / 2000.0;
-        var color_src = hitInfo.color;
+        var color_src = vec3<f32>(0.0);
+        if transform_function_colors.use_transfer_function[0] {
+            color_src = transfer_function_color;
+        } else {
+            color_src = hitInfo.color;
+        }
         color = color + (1.0 - alpha) * alpha_src * color_src;
         alpha = alpha + (1.0 - alpha) * alpha_src;
 
@@ -218,6 +234,10 @@ fn scene(p: vec3<f32>) -> HitInfo {
     output.hit = true;
     output.color = sample_result.rgb;
     return output;
+}
+
+fn remap(value: f32, min1: f32, max1: f32, min2: f32, max2: f32) -> f32 {
+    return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
 }
 
 // Adapted from https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html

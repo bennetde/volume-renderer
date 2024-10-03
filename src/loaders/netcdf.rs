@@ -1,6 +1,7 @@
 use anyhow::Result;
 use egui::debug_text::print;
 use glam::{UVec3, Vec3};
+use ndarray::Array4;
 use wgpu::{Device, Queue};
 
 use crate::voxel::{grid::VoxelGrid, voxel::Voxel};
@@ -41,23 +42,26 @@ pub fn open_voxel_grid(path: &str, grid: &mut VoxelGrid, device: &Device, queue:
     
     println!("{} {} {}", x, y, z);
 
+    let data= var.get::<f32, _>((..,..,..,..))?;
+
     *grid = VoxelGrid::new(UVec3::new(*x as u32,*y as u32,*z as u32), device, queue);
 
     for x in 0..grid.dimensions.x {
         for y in 0..grid.dimensions.y {
             for z in 0..grid.dimensions.z {
-                let mut pos = Vec3::new(x as f32, y as f32, z as f32);
 
-                let data_0 = (var.get_value::<f32, _>([0, z as usize,y as usize,x as usize])? * 255.0) as u8;
-                let data_1 = (var.get_value::<f32, _>([1, z as usize,y as usize,x as usize])? * 255.0) as u8;
-                let data_2 = (var.get_value::<f32, _>([2, z as usize,y as usize,x as usize])? * 255.0) as u8;
-                let data_3 = (var.get_value::<f32, _>([3, z as usize,y as usize,x as usize])? * 255.0) as u8;
+
+                let data_0 = (data[[0,z as usize,y as usize,x as usize]] * 255.0) as u8;
+                let data_1 = (data[[1,z as usize,y as usize,x as usize]] * 255.0) as u8;
+                let data_2 = (data[[2,z as usize,y as usize,x as usize]] * 255.0) as u8;
+                let data_3 = (data[[3,z as usize,y as usize,x as usize]] * 255.0) as u8;
 
                 grid.set_color(UVec3::new(x,y,z), [data_0, data_1, data_2, data_3])
             }
         }
-        println!("{}", x);
     }
+
+
 
     grid.update_buffer(&queue);
     println!("Finished loading NetCDF Model");

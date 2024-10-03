@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 use glam::{UVec3, UVec4, Vec3Swizzles};
-use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, Queue, ShaderStages};
+use wgpu::{core::device::queue, util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, Queue, ShaderStages};
 
 use crate::texture_3d::Texture3D;
 
@@ -16,7 +16,9 @@ pub struct VoxelGrid {
     pub voxel_texture_bind_group_layout: BindGroupLayout,
     pub voxel_texture_bind_group: BindGroup,
     voxel_grid_buffer: wgpu::Buffer,
+    raymarch_color_buffer: wgpu::Buffer,
     pub attenuation: f32,
+    pub transfer_function_colors: RaymarchTransferFunctionColors,
 }
 
 #[repr(C)]
@@ -27,6 +29,15 @@ pub struct VoxelGridUniform {
     box_size: [f32; 4],
     // Buffer is needed for byte alignment in wgsl and has no further use
     buffer: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct RaymarchTransferFunctionColors {
+    pub color_a: [f32; 4],
+    pub color_b: [f32; 4],
+    pub color_c: [f32; 4],
+    pub use_transfer_function: [u32; 4],
 }
 
 impl VoxelGrid {
@@ -44,6 +55,17 @@ impl VoxelGrid {
                     },
                     count: None
                 },
+
+                BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                }
                 // BindGroupLayoutEntry {
                 //     binding: 1,
                 //     visibility: ShaderStages::FRAGMENT,
@@ -66,6 +88,12 @@ impl VoxelGrid {
         //     contents: bytemuck::cast_slice(&voxels),
         //     usage: BufferUsages::STORAGE | BufferUsages::COPY_DST
         // });
+
+        let raymarch_color_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("raymarch_color_buffer"),
+            contents: bytemuck::cast_slice(&[RaymarchTransferFunctionColors::new()]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+        });
 
         let voxel_grid_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("voxel_grid_buffer_init_descriptor_voxel_grid"),
@@ -93,6 +121,17 @@ impl VoxelGrid {
                     resource: wgpu::BindingResource::Buffer(
                         wgpu::BufferBinding {
                             buffer: &voxel_grid_buffer,
+                            offset: 0,
+                            size: None
+                        }
+                    )
+                },
+
+                BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Buffer(
+                        wgpu::BufferBinding {
+                            buffer: &raymarch_color_buffer,
                             offset: 0,
                             size: None
                         }
@@ -154,7 +193,9 @@ impl VoxelGrid {
             voxel_texture_bind_group_layout,
             voxel_texture_bind_group,
             voxel_grid_buffer,
+            raymarch_color_buffer,
             attenuation: 1.0,
+            transfer_function_colors: RaymarchTransferFunctionColors::new()
         }
     }
 
@@ -199,6 +240,10 @@ impl VoxelGrid {
     pub fn update_voxel_grid_buffer(&mut self, queue: &Queue) {
         queue.write_buffer(&self.voxel_grid_buffer, 0, bytemuck::cast_slice(&[VoxelGridUniform::new(self.dimensions, self.attenuation)]));
     }
+
+    pub fn update_transfer_function_buffer(&mut self, queue: &Queue) {
+        queue.write_buffer(&self.raymarch_color_buffer, 0, bytemuck::cast_slice(&[self.transfer_function_colors]));
+    }
 }
 
 impl Index<UVec3> for VoxelGrid {
@@ -219,10 +264,10 @@ impl IndexMut<UVec3> for VoxelGrid {
 
 impl VoxelGridUniform {
     pub fn new(dimensions: UVec3, attenuation: f32) -> Self {
+        println!("Has dimensions {}", dimensions);
+        let min_dimension = u32::min(dimensions.x, u32::min(dimensions.y, dimensions.z));
 
-        let max_dimension = u32::max(dimensions.x, u32::max(dimensions.y, dimensions.z));
-
-        let box_size = dimensions.as_vec3() / max_dimension as f32;
+        let box_size = dimensions.as_vec3() / min_dimension as f32;
         let box_min = -box_size / 2.0;
 
         Self {
@@ -230,6 +275,17 @@ impl VoxelGridUniform {
             box_min: [box_min.x, box_min.y, box_min.z, 0.0],
             box_size: [box_size.x, box_size.y, box_size.z, 0.0],
             buffer: [attenuation; 4],
+        }
+    }
+}
+
+impl RaymarchTransferFunctionColors {
+    pub fn new() -> Self {
+        Self {
+            color_a: [0.117, 0.188, 0.62, 1.0],
+            color_b: [0.7294, 0.7294, 0.7294, 1.0],
+            color_c: [0.5725, 0.0, 0.039, 1.0],
+            use_transfer_function: [0; 4],
         }
     }
 }

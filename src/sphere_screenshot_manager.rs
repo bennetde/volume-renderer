@@ -32,7 +32,7 @@ impl SphereScreenshotManager {
     pub fn update_camera(&mut self, csp: &mut CameraSphereController, camera: &mut Camera) -> bool {
         // println!("{}", self.current_index_x);
         if self.is_screenshotting {
-            if csp.current_index_x < csp.x_divisions() {
+            if csp.current_index_x < csp.x_divisions() - 1 {
                 csp.current_index_x += 1;
             } else if csp.current_index_y < csp.y_divisions() - 1 {
                 csp.current_index_y += 1;

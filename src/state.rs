@@ -320,7 +320,7 @@ impl<'a> State<'a> {
                         }
 
                         let max_x = self.camera_sphere_controller.x_divisions();
-                        let slider = egui::Slider::new(&mut self.camera_sphere_controller.current_index_x, 0..=max_x).text("X Arc");
+                        let slider = egui::Slider::new(&mut self.camera_sphere_controller.current_index_x, 0..=max_x-1).text("X Arc");
                         ui.add(slider);
 
                         let max_y = self.camera_sphere_controller.y_divisions();
@@ -340,6 +340,12 @@ impl<'a> State<'a> {
                         let slider = egui::Slider::new(&mut self.ray_marcher.voxel_grid.attenuation, 0.0..=100.0).text("Attenuation");
                         if ui.add(slider).changed() {
                             self.ray_marcher.voxel_grid.update_voxel_grid_buffer(&self.queue);
+                        }
+
+                        let mut is_checked = self.ray_marcher.voxel_grid.transfer_function_colors.use_transfer_function[0] != 0;
+                        if ui.checkbox(&mut is_checked, "Use Transfer Function Colors").changed() {
+                            self.ray_marcher.voxel_grid.transfer_function_colors.use_transfer_function[0] = is_checked as u32;
+                            self.ray_marcher.voxel_grid.update_transfer_function_buffer(&self.queue);
                         }
                     });
                 }
