@@ -1,7 +1,5 @@
 use anyhow::Result;
-use egui::debug_text::print;
 use glam::{UVec3, Vec3};
-use ndarray::Array4;
 use wgpu::{Device, Queue};
 
 use crate::voxel::{grid::VoxelGrid, voxel::Voxel};
