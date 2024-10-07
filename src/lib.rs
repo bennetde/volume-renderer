@@ -13,6 +13,7 @@ mod gui;
 mod screenshot;
 mod sphere_screenshot_manager;
 mod loaders;
+mod compare;
 
 use std::time::Instant;
 

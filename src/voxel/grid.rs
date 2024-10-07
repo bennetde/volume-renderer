@@ -288,4 +288,12 @@ impl RaymarchTransferFunctionColors {
             use_transfer_function: [0; 4],
         }
     }
+
+    pub fn use_transfer_function_active(&self) -> bool {
+        self.use_transfer_function[0] != 0
+    }
+
+    pub fn set_transfer_function_active(&mut self, val: bool) {
+        self.use_transfer_function[0] = val as u32;
+    }
 }

@@ -263,48 +263,45 @@ impl<'a> State<'a> {
                 &view,
                 screen_descriptor,
                 |ctx| {
-
+                    // Draw Top Bar Menu
                     egui::TopBottomPanel::top("my_panel").show(&ctx, |ui| {
                         menu::bar(ui, |ui| {
                             ui.menu_button("File", |ui| {
                                 if ui.button("Open NetCDF").clicked() {
-                                    let future = async {
-                                        let file = AsyncFileDialog::new()
-                                            .add_filter("NetCDF", &["nc"])
-                                            .set_directory(std::env::current_dir().unwrap())
-                                            .pick_file()
-                                            .await;
-
-                                        if let Some(file_handle) = file {
-                                            crate::loaders::netcdf::open_voxel_grid(file_handle.path().to_str().unwrap(), &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
-                                        }
-                                    };
-                                    pollster::block_on(future);
+                                    let file_path = open_file_menu("DAT", &["dat"]).unwrap();
+                                    if let Some(file_path) = file_path {
+                                        crate::loaders::netcdf::open_voxel_grid(&file_path, &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
+                                    }
                                 }
 
                                 if ui.button("Open DAT").clicked() {
-                                    let future = async {
-                                        let file: Option<rfd::FileHandle> = AsyncFileDialog::new()
-                                            .add_filter("DAT", &["dat"])
-                                            .set_directory(std::env::current_dir().unwrap())
-                                            .pick_file()
-                                            .await;
+                                    let file_path = open_file_menu("DAT", &["dat"]).unwrap();
+                                    if let Some(file_path) = file_path {
+                                        crate::loaders::dat::open_voxel_grid(&file_path, &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
+                                    }
 
-                                        if let Some(file_handle) = file {
-                                            crate::loaders::dat::open_voxel_grid(file_handle.path().to_str().unwrap(), &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
-                                        }
-                                    };
-                                    pollster::block_on(future);
                                 }
 
                                 if ui.button("Export NetCDF").clicked() {
                                     crate::loaders::netcdf::write_voxel_grid("test.nc", &self.ray_marcher.voxel_grid).unwrap();
                                 }
                             });
+
+                            ui.menu_button("Compare", |ui| {
+                                if ui.button("Compare NetCDF to Ground-Truth").clicked() {
+                                    let file_path = open_file_menu("NetCDF", &["nc"]).unwrap();
+                                    if let Some(path) = file_path {
+                                        let color_function_active = self.ray_marcher.voxel_grid.transfer_function_colors.use_transfer_function_active();
+                                        let result = crate::compare::netcdf::compare_to_netcdf_rmse(&path, &mut self.ray_marcher.voxel_grid, !color_function_active);
+                                        println!("{:?}", result);
+                                    }
+                                }
+                            });
                         });
                         
-                     });
+                        });
 
+                    // Draw Main Window UI
                     egui::Window::new("").default_open(true)
                     .show(&ctx, |ui| {
 
@@ -344,7 +341,7 @@ impl<'a> State<'a> {
 
                         let mut is_checked = self.ray_marcher.voxel_grid.transfer_function_colors.use_transfer_function[0] != 0;
                         if ui.checkbox(&mut is_checked, "Use Transfer Function Colors").changed() {
-                            self.ray_marcher.voxel_grid.transfer_function_colors.use_transfer_function[0] = is_checked as u32;
+                            self.ray_marcher.voxel_grid.transfer_function_colors.set_transfer_function_active(is_checked);
                             self.ray_marcher.voxel_grid.update_transfer_function_buffer(&self.queue);
                         }
                     });
@@ -376,4 +373,24 @@ impl<'a> State<'a> {
     pub fn set_frametime(&mut self, frametime: Duration) {
         self.frametime = frametime;
     }
+}
+
+/// Helper Function to easily open a File Dialog
+fn open_file_menu(filter_name: &str, extensions: &[&str]) -> anyhow::Result<Option<String>> {
+    let mut file_menu = None;
+
+    let future = async {
+        let file: Option<rfd::FileHandle> = AsyncFileDialog::new()
+            .add_filter(filter_name, extensions)
+            .set_directory(std::env::current_dir().unwrap())
+            .pick_file()
+            .await;
+
+        if let Some(file_handle) = file {
+            file_menu = Some(file_handle.path().to_str().unwrap().to_string());
+        }
+    };
+    pollster::block_on(future);
+
+    Ok(file_menu)
 }
