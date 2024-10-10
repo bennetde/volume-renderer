@@ -25,7 +25,7 @@ impl Camera {
 
     pub fn build_view_projection_matrix(&mut self) -> Mat4 {
         let view = Mat4::look_to_rh(self.transform.position, self.transform.forward(), Vec3::Y);
-        let proj = Mat4::perspective_rh(self.fovy, self.aspect, self.znear, self.zfar);
+        let proj = Mat4::perspective_rh(f32::to_radians(self.fovy), self.aspect, self.znear, self.zfar);
 
         return proj * view;
     }
