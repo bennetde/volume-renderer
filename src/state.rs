@@ -268,7 +268,7 @@ impl<'a> State<'a> {
                         menu::bar(ui, |ui| {
                             ui.menu_button("File", |ui| {
                                 if ui.button("Open NetCDF").clicked() {
-                                    let file_path = open_file_menu("DAT", &["dat"]).unwrap();
+                                    let file_path = open_file_menu("NetCDF", &["nc"]).unwrap();
                                     if let Some(file_path) = file_path {
                                         crate::loaders::netcdf::open_voxel_grid(&file_path, &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
                                     }
