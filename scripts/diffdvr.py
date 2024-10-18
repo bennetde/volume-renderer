@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 import tqdm
 import json
+#DiffDVR
 import pyrenderer
 
 from PIL import Image
@@ -22,26 +23,31 @@ from PIL import Image
 def make_real3(vector):
   return pyrenderer.real3(vector[0], vector[1], vector[2])
 
+# Settings
+cameras_dir = r'C:\Users\Bennet\Documents\Projects\bachelorthesis\screenshots\head_1_at_color\ground_truth\\'
+X = 256 # Volume resolution Width
+Y = 256 # Volume resolution Height
+Z = 256 # Volume resolution Depth
+H = 1024 # Screen Size Width
+W = 1024 # Screen Size Height
+NAME = 'head_upsample_nearest_64'
+DOWNSCALE = 2 # Downscale Output Volume, Set to 1 for no Downscaling
+EPOCHS = 128
+LEARING_RATE = 0.01
+# STEP_SIZE = 0.25 / max(X, max(Y, Z))
+STEP_SIZE = 0.001 # Step-Size the DiffDVR Renderer uses
+B = 1 # ?
+FILE_NAME = f'{NAME}_approx_{EPOCHS}epochs_{LEARING_RATE}lr_{STEP_SIZE}sz_downscaled{DOWNSCALE}' # Output file name
+EPOCH_SNAPSHOTS = [1,2,4,8,16,32,64,80,96,112] # Save snapshots every X-th Epoch 
+EPOCH_CLAMPING = [] # Clamp opacity to 0.1 every X-th Epoch
+EPOCH_UPSAMPLE = [16,32,64] # Upsample epoch every X-th Epoch, this will increase each dimensions size by 2
 
-if __name__=='__main__':
+def main():
     print(pyrenderer.__doc__)
     device = "cuda"
     dtype = torch.float32
 
-    # Settings
-    cameras_dir = r'C:\Users\Bennet\Documents\Projects\bachelorthesis\screenshots\tooth_cropped_1at_color\ground_truth\\'
-    X = 92 # Volume resolution Width
-    Y = 82 # Volume resolution Height
-    Z = 159 # Volume resolution Depth
-    H = 1024 # Screen Size Width
-    W = 1024 # Screen Size Height
-    DOWNSCALE = 1 # Downscale Output Volume, Set to 1 for no Downscaling
-    EPOCHS = 32
-    LEARING_RATE = 0.01
-    # STEP_SIZE = 0.001
-    STEP_SIZE = 0.25 / max(X, max(Y, Z))
-    B = 1 # ?
-    FILE_NAME = f'approx_{EPOCHS}epochs_{LEARING_RATE}lr_{STEP_SIZE}sz.nc' # Output file name
+
 
     # Select output type
     write_video = False
@@ -49,7 +55,6 @@ if __name__=='__main__':
     write_nc = True
 
     min_dim = min(Z, min(Y, X))
-    div_scale = 1.3
 
     cameras_path = cameras_dir + 'cameras.json'
     with open(cameras_path) as f:
@@ -73,8 +78,8 @@ if __name__=='__main__':
     inputs.screen_size = pyrenderer.int2(W, H)
     inputs.volume = volume_tensor
     inputs.volume_filter_mode = pyrenderer.VolumeFilterMode.Preshaded
-    inputs.box_min = pyrenderer.real3(-X / min_dim / 2 / div_scale, -Y / min_dim / 2 / div_scale, -Z / min_dim / 2 / div_scale)
-    inputs.box_size = pyrenderer.real3(X / min_dim / div_scale, Y / min_dim / div_scale, Z / min_dim / div_scale)
+    inputs.box_min = pyrenderer.real3(-X / min_dim / 2, -Y / min_dim / 2, -Z / min_dim / 2)
+    inputs.box_size = pyrenderer.real3(X / min_dim, Y / min_dim, Z / min_dim)
     # inputs.step_size = 0.25 / max(X, max(Y, Z))
     inputs.step_size = STEP_SIZE
     inputs.tf_mode = pyrenderer.TFMode.Preshaded
@@ -128,6 +133,9 @@ if __name__=='__main__':
         
         def forward(self, iteration, volume_tensor):
             color = rendererDeriv(volume_tensor)
+            # Uncomment to only train on density without other colors
+            # with torch.no_grad():
+            #     reference_color_gpu[:,:,:,0:3] = color[:,:,:,0:3]
             loss = torch.nn.functional.mse_loss(color, reference_color_gpu)
             return loss, volume_tensor, color
         
@@ -136,6 +144,9 @@ if __name__=='__main__':
     start_time = time.time()
 
     iterations = len(cameras_json) * EPOCHS
+    snapshot_epochs = [(i * len(cameras_json) - 1) for i in EPOCH_SNAPSHOTS]
+    opacity_clamping_epochs = [(i * len(cameras_json) - 1) for i in EPOCH_CLAMPING]
+    upsample_epochs = [(i * len(cameras_json) - 1) for i in EPOCH_UPSAMPLE]
     # iterations = ca
     reconstructed_color = []
     reconstructed_loss = []
@@ -158,8 +169,6 @@ if __name__=='__main__':
         reference_color_image = np.array(ref_img).astype(np.float32) / 255.0
         reference_color_image = reference_color_image.reshape((1, reference_color_image.shape[0], reference_color_image.shape[1], 4))
         reference_color_image = reference_color_image.transpose(0, 1, 2, 3)
-        # imgplot = plt.imshow(reference_color_image)
-        # plt.show()
 
         if write_video:
             reference_color_images.append(reference_color_image[0,:,:,0:3])
@@ -169,15 +178,13 @@ if __name__=='__main__':
         camera_origin = np.array(camera_json["position"])
         camera_origin[1] = -camera_origin[1]
         camera_origin[0] = -camera_origin[0]
-        # camera_right = np.array(camera_json["right"])
+
         camera_up = np.array(camera_json["up"])
-        # camera_up[0] = -camera_up[0]
+
         camera_up[0] = 0
         camera_up[1] = 1
         camera_up[2] = 0
-        # camera_up[1] = -camera_up[1]
-        # camera_up[1] = -camera_up[1]
-        # camera_front = np.array(camera_json["front"])
+
         invViewMatrix = pyrenderer.Camera.compute_matrix(
             make_real3(camera_origin), make_real3(look_at), make_real3(camera_up), fovy, W, H, 0.1, 1000.0
         )
@@ -190,6 +197,26 @@ if __name__=='__main__':
         reconstructed_loss.append(loss.item())
         loss.backward()
         optimizer.step()
+
+        # Opacity clamping every x steps
+        # if iteration % len(cameras_json) and iteration < iterations // 2:
+        if iteration in opacity_clamping_epochs:
+            with torch.no_grad():
+                color[:,:,:,3] = torch.min(color[:,:,:,3], torch.ones_like(color[:,:,:,3]) * 0.1)
+
+        # Upsample (coarse-to-fine)
+        if iteration in upsample_epochs:
+            # Upsample volume
+            volume_tensor = volume_tensor.unsqueeze(0)
+            volume_tensor = torch.nn.functional.interpolate(volume_tensor, scale_factor=2, mode='nearest')
+            volume_tensor = volume_tensor.squeeze()
+            inputs.volume = volume_tensor
+            grad_volume = grad_volume.unsqueeze(0)
+            grad_volume = torch.nn.functional.interpolate(grad_volume, scale_factor=2, mode='nearest')
+            grad_volume = grad_volume.squeeze()
+            adjoint_outputs.adj_volume = grad_volume
+            print('Upsample')
+
         with torch.no_grad():
             inputs_cpy = inputs.clone()
             inputs_cpy.camera_mode = pyrenderer.CameraMode.RayStartDir
@@ -198,22 +225,16 @@ if __name__=='__main__':
             test_image = output_color_test.cpu().numpy()[0]
             if write_video:
                 second_view_images.append(test_image)
-        print("Iteration % 4d, %s, Loss %7.5f"%(iteration, camera_json["img"], loss.item()))
+        print("Iteration % 4d / %4d, %s, Loss %7.5f"%(iteration, iterations, camera_json["img"], loss.item()))
+
+        if iteration in snapshot_epochs:
+            snapshot_nc(FILE_NAME, EPOCH_SNAPSHOTS[snapshot_epochs.index(iteration)], volume_tensor)
     
     elapsed_time = time.time() - start_time
     print(f'Elapsed time optimization: {elapsed_time}s')
 
     if write_nc:
-        ncfile = Dataset(FILE_NAME, mode='w', format='NETCDF4_CLASSIC')
-        cdim = ncfile.createDimension('c', 4)
-        zdim = ncfile.createDimension('z', Z // DOWNSCALE)
-        ydim = ncfile.createDimension('y', Y // DOWNSCALE)
-        xdim = ncfile.createDimension('x', X // DOWNSCALE)
-        outfield_color = ncfile.createVariable('color', np.float32, ('c', 'z', 'y', 'x'))
-        #outfield_color[:, :, :, :] = volume_tensor.detach().cpu().numpy().flatten('F')
-        #outfield_color.flatten('F') = volume_tensor.detach().cpu().numpy().flatten('F')
-        outfield_color[:, :, :, :] = np.flip(np.flip(volume_tensor.detach().cpu().numpy().transpose(0, 3, 2, 1),2),3)
-        ncfile.close()
+        save_nc(FILE_NAME, volume_tensor)
 
     if write_video:
         print("Visualize Optimization")
@@ -249,3 +270,24 @@ if __name__=='__main__':
             anim.save(f"test_preshaded.mp4")
     
     pyrenderer.cleanup()
+
+def save_nc(filename, volume_tensor):
+
+    ncfile = Dataset(filename + '.nc', mode='w', format='NETCDF4_CLASSIC')
+    cdim = ncfile.createDimension('c', 4)
+    zdim = ncfile.createDimension('z', volume_tensor.size(dim=3))
+    ydim = ncfile.createDimension('y', volume_tensor.size(dim=2))
+    xdim = ncfile.createDimension('x', volume_tensor.size(dim=1))
+    outfield_color = ncfile.createVariable('color', np.float32, ('c', 'z', 'y', 'x'))
+    #outfield_color[:, :, :, :] = volume_tensor.detach().cpu().numpy().flatten('F')
+    #outfield_color.flatten('F') = volume_tensor.detach().cpu().numpy().flatten('F')
+    outfield_color[:, :, :, :] = np.flip(np.flip(volume_tensor.detach().cpu().numpy().transpose(0, 3, 2, 1),2),3)
+    ncfile.close()
+
+def snapshot_nc(filename, epoch, volume_tensor):
+    name = filename + f'_snapshot{epoch}'
+    save_nc(name, volume_tensor)
+    print(f"Created snaphot {name}")
+
+if __name__=='__main__':
+    main()
