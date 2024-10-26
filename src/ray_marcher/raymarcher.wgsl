@@ -141,6 +141,7 @@ fn raymarch(ro: vec3<f32>, rd: vec3<f32>) -> RayMarchOutput {
         let p: vec3<f32> = ro + rd * dt;
         let hitInfo = scene(p);
 
+        // Transfer Function Lerp
         let color_ab_mix = mix(transform_function_colors.color_a.rgb, transform_function_colors.color_b.rgb, remap(hitInfo.alpha, 0.0, 0.5, 0.0, 1.0));
         let color_bc_mix = mix(transform_function_colors.color_b.rgb, transform_function_colors.color_c.rgb, remap(hitInfo.alpha, 0.5, 1.0, 0.0, 1.0));
         let transfer_function_color = mix(color_ab_mix, color_bc_mix, step(0.5, hitInfo.alpha));

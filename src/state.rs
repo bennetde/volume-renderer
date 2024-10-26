@@ -81,12 +81,13 @@ impl<'a> State<'a> {
         println!("{:?}", surface_caps.present_modes);
 
         // If possible disable VSync
-        let present_mode = if surface_caps.present_modes.contains(&wgpu::PresentMode::Immediate) {
-            wgpu::PresentMode::Immediate
-            // surface_caps.present_modes[0]
-        } else {
-            surface_caps.present_modes[0]
-        };
+        // let present_mode = if surface_caps.present_modes.contains(&wgpu::PresentMode::Immediate) {
+        //     wgpu::PresentMode::Immediate
+        //     // surface_caps.present_modes[0]
+        // } else {
+        //     surface_caps.present_modes[0]
+        // };
+        let present_mode = surface_caps.present_modes[0];
 
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
@@ -271,6 +272,7 @@ impl<'a> State<'a> {
                                     let file_path = open_file_menu("NetCDF", &["nc"]).unwrap();
                                     if let Some(file_path) = file_path {
                                         crate::loaders::netcdf::open_voxel_grid(&file_path, &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
+                                        self.window.set_title(&file_path);
                                     }
                                 }
 
@@ -278,6 +280,7 @@ impl<'a> State<'a> {
                                     let file_path = open_file_menu("DAT", &["dat"]).unwrap();
                                     if let Some(file_path) = file_path {
                                         crate::loaders::dat::open_voxel_grid(&file_path, &mut self.ray_marcher.voxel_grid, &self.device, &self.queue).unwrap();
+                                        self.window.set_title(&file_path);
                                     }
 
                                 }
@@ -306,6 +309,9 @@ impl<'a> State<'a> {
                     .show(&ctx, |ui| {
 
                         ui.label(format!("Frametime: {}ms", self.frametime.as_millis()));
+
+                        // Screenshotting 
+
                         if ui.button("Screenshot").clicked() {
                             self.should_screenshot = true;
                         }
@@ -315,7 +321,26 @@ impl<'a> State<'a> {
                             self.sphere_screenshot_manager.start_screenshotting(&mut self.camera_sphere_controller, &mut self.camera);
                             self.should_screenshot = true;
                         }
+                        
 
+                        // Camera Sphere Controller
+                        // X Divisions
+                        let mut val = self.camera_sphere_controller.x_divisions();
+                        let slider = egui::Slider::new(&mut val, 0..=100).text("X Divisions");
+                        ui.add(slider);
+                        if val != self.camera_sphere_controller.x_divisions() {
+                            self.camera_sphere_controller.set_horizontal_divisions(val);
+                        }
+
+                        // Y Divisions
+                        let mut val = self.camera_sphere_controller.y_divisions();
+                        let slider = egui::Slider::new(&mut val, 0..=100).text("Y Divisions");
+                        ui.add(slider);
+                        if val != self.camera_sphere_controller.y_divisions() {
+                            self.camera_sphere_controller.set_vertical_divisions(val);
+                        }
+
+                        // Current Positions
                         let max_x = self.camera_sphere_controller.x_divisions();
                         let slider = egui::Slider::new(&mut self.camera_sphere_controller.current_index_x, 0..=max_x-1).text("X Arc");
                         ui.add(slider);
@@ -327,12 +352,16 @@ impl<'a> State<'a> {
                         let slider = egui::Slider::new(&mut self.camera_sphere_controller.radius, 1.0..=1000.0).text("Radius");
                         ui.add(slider);
 
+                        // Debug Info
+
                         ui.label(format!("Position: {:.2}", self.camera.transform.position));
                         ui.label(format!("Right: {:.2}", self.camera.transform.right()));
                         ui.label(format!("Up: {:.2}", self.camera.transform.up()));
                         ui.label(format!("Look dir: {:.2}", self.camera.transform.forward()));
                         ui.label(format!("Size: {:?}", self.window.inner_size()));
                         ui.checkbox(&mut self.free_move, "Free-Move");
+
+                        // Attenuation + Transfer Function
 
                         let slider = egui::Slider::new(&mut self.ray_marcher.voxel_grid.attenuation, 0.0..=100.0).text("Attenuation");
                         if ui.add(slider).changed() {

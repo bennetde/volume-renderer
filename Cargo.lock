@@ -753,6 +753,7 @@ dependencies = [
  "glam",
  "image",
  "log",
+ "ndarray",
  "netcdf",
  "noise",
  "png",
@@ -1263,25 +1264,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "hdf5-src"
-version = "0.8.1"
+name = "hdf5-metno-src"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e01493db39ddc0519cf2a83d620d2c037fee60f4fed724cb72dc23763f1727a8"
+checksum = "9b746b01050a79cb2914d4d62ae61b8a7e93cc7699a050081b0f88329e859dcd"
 dependencies = [
  "cmake",
  "libz-sys",
 ]
 
 [[package]]
-name = "hdf5-sys"
-version = "0.8.1"
+name = "hdf5-metno-sys"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4842d5980dc311a7c8933c7b45534fdae84df5ae7939a0ae8e449a56d4beb3d2"
+checksum = "1e7be8ee30e5034ee48dd30bc85a2fdde6e1ec0e5e19598409e8e9955eab14af"
 dependencies = [
- "hdf5-src",
+ "hdf5-metno-src",
  "libc",
- "libloading 0.7.4",
+ "libloading 0.8.5",
  "libz-sys",
+ "parking_lot",
  "pkg-config",
  "regex",
  "serde",
@@ -1696,37 +1698,39 @@ dependencies = [
 
 [[package]]
 name = "netcdf"
-version = "0.9.3"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8aa8799e918d05f6d5d05e08d980f5a4e5d4f4fb503904f2c35c49aed9ac75a"
+checksum = "3edbd8b8e273c08e42ec7cc255cb907a16f78db0833b8ad3b6457168d90f3a39"
 dependencies = [
  "bitflags 2.6.0",
  "libc",
  "ndarray",
  "netcdf-sys",
+ "semver",
 ]
 
 [[package]]
 name = "netcdf-src"
-version = "0.3.7"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68ae83ca3a3cdbd6f5bc1a30b51cc4838679cbc926f6ead0fed5ee3e52708795"
+checksum = "db385e065fef89907fbc08858dddadf7a0e219b654333e7ce31260641a2238b3"
 dependencies = [
  "cmake",
- "hdf5-sys",
+ "hdf5-metno-sys",
  "libz-sys",
 ]
 
 [[package]]
 name = "netcdf-sys"
-version = "0.6.2"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41d5387d8e8569b204a9e065529f10d42ef0a1d3b8622d6ee2612765639fbe19"
+checksum = "e848a01eaee33a1c3f0b2b2e92f03c7fcface4384c0f7cef00024954f19c7868"
 dependencies = [
  "curl-sys",
- "hdf5-sys",
+ "hdf5-metno-sys",
  "libz-sys",
  "netcdf-src",
+ "parking_lot",
  "semver",
 ]
 
@@ -3529,12 +3533,13 @@ dependencies = [
 
 [[package]]
 name = "winreg"
-version = "0.10.1"
+version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
+checksum = "a277a57398d4bfa075df44f501a17cfdf8542d224f0d36095a2adc7aee4ef0a5"
 dependencies = [
+ "cfg-if",
  "serde",
- "winapi",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

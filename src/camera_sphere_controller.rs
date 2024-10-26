@@ -28,6 +28,16 @@ impl CameraSphereController {
         }
     }
 
+    pub fn set_vertical_divisions(&mut self, y_divisions: u32) {
+        self.vertical_divisions = y_divisions;
+        self.current_index_y = 1;
+    }
+
+    pub fn set_horizontal_divisions(&mut self, x_divisions: u32) {
+        self.horizontal_divisons = x_divisions;
+        self.current_index_x = 0;
+    }
+
     pub fn inc_x_index(&mut self) {
         self.current_index_x += 1;
     }

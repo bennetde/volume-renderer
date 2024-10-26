@@ -26,9 +26,9 @@ impl RayMarcher {
     pub fn new(device: &Device, queue: &Queue, config: &SurfaceConfiguration, camera_bind_group: Rc<BindGroup>) -> Self {
         
         let shader = device.create_shader_module(wgpu::include_wgsl!("raymarcher.wgsl"));
-        let mut voxel_grid = VoxelGrid::new(UVec3::new(256,256,256), &device, &queue);
+        let mut voxel_grid = VoxelGrid::new(UVec3::new(3,3,3), &device, &queue);
         // voxel_grid.set_color(UVec3::ZERO, Vec4::new(1.0, 0.0, 0.0, 1.0));
-        init_grid_buffer_perlin(&mut voxel_grid);
+        // init_grid_buffer_perlin(&mut voxel_grid);
         // init_grid_buffer_pyramid(&mut voxel_grid);
         // init_grid_buffer_sphere(&mut voxel_grid, 32.0);
         voxel_grid.update_buffer(&queue);
