@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
-use glam::{UVec3, UVec4, Vec3Swizzles};
-use wgpu::{core::device::queue, util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, Queue, ShaderStages};
+use glam::{UVec3, Vec3Swizzles};
+use wgpu::{util::{BufferInitDescriptor, DeviceExt}, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BufferUsages, Device, Queue, ShaderStages};
 
 use crate::texture_3d::Texture3D;
 

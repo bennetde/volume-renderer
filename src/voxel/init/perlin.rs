@@ -1,10 +1,10 @@
-use std::time::{self, UNIX_EPOCH};
 
 use glam::{DVec3, UVec3};
 use noise::{NoiseFn, Perlin};
 
 use crate::voxel::grid::VoxelGrid;
 
+#[allow(dead_code)]
 pub fn init_grid_buffer_perlin(grid: &mut VoxelGrid) {
     //std::time::SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32
     let noise = Perlin::new(51);

@@ -8,7 +8,7 @@ pub struct Camera {
     fovy: f32,
     znear: f32,
     zfar: f32,
-    pub look_dir: Vec3
+    pub _look_dir: Vec3
 }
 
 impl Camera {
@@ -19,7 +19,7 @@ impl Camera {
             fovy: 45.0,
             znear: 0.1,
             zfar: 1000.0,
-            look_dir: Vec3::ZERO
+            _look_dir: Vec3::ZERO
         }
     }
 

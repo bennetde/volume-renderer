@@ -2,13 +2,14 @@ use glam::{UVec3, Vec3};
 
 use crate::voxel::grid::VoxelGrid;
 
+#[allow(dead_code)]
 pub fn init_grid_buffer_pyramid(grid: &mut VoxelGrid) {
     let center = Vec3::new(grid.dimensions.x as f32, grid.dimensions.y as f32, grid.dimensions.z as f32) / 2.0;
     println!("{center}");
     for y in 0..grid.dimensions.y {
         for x in y..grid.dimensions.x-y {
             for z in y..grid.dimensions.y-y {
-                let mut pos = Vec3::new(x as f32, y as f32, z as f32);
+                // let pos = Vec3::new(x as f32, y as f32, z as f32);
                 let alpha = 255u8;
                 // let alpha = (center.distance(pos as Vec3)) as u8;
                 // println!("{alpha}");

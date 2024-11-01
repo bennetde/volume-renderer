@@ -47,7 +47,7 @@ pub fn open_voxel_grid(path: &str, grid: &mut VoxelGrid, device: &Device, queue:
 
 
     let mut raw_file = File::open(path)?;
-    let mut bytes = vec![0; bytes_to_read];
+    let mut bytes: Vec<u8>;
 
     let mut all_bytes = vec![0;0];
     raw_file.read_to_end(&mut all_bytes)?;

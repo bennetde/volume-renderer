@@ -1,4 +1,4 @@
-use crate::voxel::grid::{RaymarchTransferFunctionColors, VoxelGrid};
+use crate::voxel::grid::VoxelGrid;
 use anyhow::Result;
 use glam::UVec3;
 

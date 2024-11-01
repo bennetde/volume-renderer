@@ -1,8 +1,8 @@
 use anyhow::Result;
-use glam::{UVec3, Vec3};
+use glam::UVec3;
 use wgpu::{Device, Queue};
 
-use crate::voxel::{grid::VoxelGrid, voxel::Voxel};
+use crate::voxel::grid::VoxelGrid;
 
 pub fn write_voxel_grid(path: &str, grid: &VoxelGrid) -> Result<()> {
 

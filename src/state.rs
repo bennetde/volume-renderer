@@ -2,8 +2,7 @@ use std::{rc::Rc, time::Duration};
 use egui::menu;
 use egui_wgpu::ScreenDescriptor;
 use glam::Vec3;
-use pollster::FutureExt;
-use rfd::{AsyncFileDialog, FileDialog};
+use rfd::AsyncFileDialog;
 use wgpu::{util::DeviceExt, Color};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 use crate::{camera::{Camera, CameraUniform}, camera_controller::CameraController, camera_sphere_controller::CameraSphereController, gui::EguiRenderer, ray_marcher::RayMarcher, screenshot::Screenshotter, sphere_screenshot_manager::SphereScreenshotManager};
@@ -56,7 +55,7 @@ impl<'a> State<'a> {
 
         let mut limits = wgpu::Limits::default();
         limits.max_buffer_size = 18446744073709551615;
-        limits.max_storage_buffer_binding_size = 2147483648;
+        // limits.max_storage_buffer_binding_size = 2147483648;
         limits.max_texture_dimension_3d = 4096;
         
 
