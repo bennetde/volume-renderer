@@ -6,6 +6,8 @@ that I wrote for my Bachelor's thesis at TU Munich.
 This renderer is a volumetric raymarcher that can load and display various volumetric model
 and quickly export multiple views of the volume for application in Novel View Synthesis.
 
+![A screenshot of the program](screenshots/screenshot.png)
+
 ## Features
 - Load Volumes in a DAT or NetCDF-Format
 - Export views in PNG-format
@@ -22,6 +24,3 @@ the amount of views to be exported using the two top sliders. Move the position 
 The project comes with a sample DiffDVR script for configurating the optimization process. DiffDVR by Sebastian Weiss
 is needed to run this script. Secondly, a simple script for comparing views with the same filename and calculating the average RMSE
 across all views.
-
-
-![A screenshot of the program](screenshots/screenshot.png)
