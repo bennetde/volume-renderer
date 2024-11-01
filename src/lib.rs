@@ -29,7 +29,10 @@ use winit::{
 pub async fn run() {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
-    let window = WindowBuilder::new().with_inner_size(Size::Logical(LogicalSize::new(1024.0, 1024.0))).build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_title("Volume Renderer")
+        .with_inner_size(Size::Logical(LogicalSize::new(1024.0, 1024.0)))
+        .build(&event_loop).unwrap();
 
     let mut state = State::new(&window).await;
 
