@@ -1,9 +1,9 @@
-# A Volume Raymarcher for DiffDVR
+# A Direct Volume Renderer for DiffDVR
 
 This code project represents part of my thesis "Differentiable Volume Rendering for Novel View Synthesis"
 that I wrote for my Bachelor's thesis at TU Munich.
 
-This renderer is a volumetric raymarcher that can load and display various volumetric objects
+This renderer is a volumetric raymarcher that can load and display various volumetric model
 and quickly export multiple views of the volume for application in Novel View Synthesis.
 
 ## Features
