@@ -1,3 +1,5 @@
+# This file was modified. Attribution to Sebastian Weiss and Christop Neuhauser
+
 import sys
 import os
 import time
@@ -133,7 +135,7 @@ def main():
         
         def forward(self, iteration, volume_tensor):
             color = rendererDeriv(volume_tensor)
-            # Uncomment to only train on density without other colors
+            # Uncomment to only optimize on opacity only
             # with torch.no_grad():
             #     reference_color_gpu[:,:,:,0:3] = color[:,:,:,0:3]
             loss = torch.nn.functional.mse_loss(color, reference_color_gpu)

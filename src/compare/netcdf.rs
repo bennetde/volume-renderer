@@ -68,7 +68,8 @@ pub fn compare_to_netcdf_rmse(path: &str, grid: &mut VoxelGrid, density_only: bo
     
 
     println!("Finished comparing NetCDF Model | Density only: {}", density_only);
-    Ok(f32::sqrt(rmse / ((x * y * z * amount_channels) as f32)))
+    let mean = rmse / (x * y * z * amount_channels) as f32;
+    Ok(f32::sqrt(mean))
 }
 
 fn mix(x: f32, y: f32, a: f32) -> f32 {
