@@ -1,4 +1,4 @@
-use diffdvr_voxel::run;
+use volume_renderer::run;
 
 fn main() {
     pollster::block_on(run());
