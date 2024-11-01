@@ -4,6 +4,7 @@ use noise::{NoiseFn, Perlin};
 
 use crate::voxel::grid::VoxelGrid;
 
+/// Initiates the VoxelGrid to contain a Perlin Noise Model
 #[allow(dead_code)]
 pub fn init_grid_buffer_perlin(grid: &mut VoxelGrid) {
     //std::time::SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32

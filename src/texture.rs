@@ -1,6 +1,7 @@
 use image::GenericImageView;
 use anyhow::*;
 
+/// Deprecate: 2D Texture struct
 #[allow(dead_code)]
 pub struct Texture {
     pub texture: wgpu::Texture,

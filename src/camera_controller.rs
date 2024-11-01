@@ -2,6 +2,7 @@ use winit::{event::{ElementState, KeyEvent, WindowEvent}, keyboard::{KeyCode, Ph
 
 use crate::camera::Camera;
 
+/// Camera Controller for moving the camera using the keyboard
 pub struct CameraController {
     speed: f32,
     is_forward_pressed: bool,

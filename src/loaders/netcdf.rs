@@ -4,6 +4,7 @@ use wgpu::{Device, Queue};
 
 use crate::voxel::grid::VoxelGrid;
 
+/// Exports a Voxel Grid into a NetCDF-File
 pub fn write_voxel_grid(path: &str, grid: &VoxelGrid) -> Result<()> {
 
     let mut file = netcdf::create(path)?;
@@ -29,6 +30,7 @@ pub fn write_voxel_grid(path: &str, grid: &VoxelGrid) -> Result<()> {
     Ok(())
 }
 
+/// Loads a NetCDF-File into a Voxel Grid
 pub fn open_voxel_grid(path: &str, grid: &mut VoxelGrid, device: &Device, queue: &Queue) -> Result<()> {
     let file = netcdf::open(path)?;
 

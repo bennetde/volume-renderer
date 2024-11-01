@@ -5,6 +5,7 @@ use anyhow::Result;
 use serde::Serialize;
 use crate::{camera::Camera, camera_sphere_controller::CameraSphereController};
 
+/// Helper struct to create screenshots with the camera placed around the sphere
 pub struct SphereScreenshotManager {
     is_screenshotting: bool,
     screenshot_info: ScreenshotInformation

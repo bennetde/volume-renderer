@@ -1,3 +1,4 @@
+/// Helper struct that implements a vertex with its texture coordinates
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {

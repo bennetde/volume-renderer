@@ -1,6 +1,7 @@
 use glam::UVec3;
 use anyhow::*;
 
+/// Texture3D helper struct
 pub struct Texture3D {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,

@@ -1,6 +1,7 @@
 use std::fmt::Display;
 use glam::{Mat4, Quat, Vec3};
 
+/// Implements a objects transform in the scene.
 #[derive(Debug, Clone, Copy)]
 pub struct Transform {
     pub position: Vec3,

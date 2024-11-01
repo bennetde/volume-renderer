@@ -6,6 +6,7 @@ use wgpu::{Device, Queue};
 use crate::voxel::grid::VoxelGrid;
 use anyhow::Result;
 
+/// Loads a DAT-File into a Voxel Grid
 pub fn open_voxel_grid(path: &str, grid: &mut VoxelGrid, device: &Device, queue: &Queue) -> Result<()> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);

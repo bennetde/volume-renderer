@@ -3,6 +3,8 @@ use anyhow::Result;
 use glam::UVec3;
 
 
+/// Compares the loaded voxel grid to another NetCDF-file
+/// Returns the average RMSE over all voxels
 pub fn compare_to_netcdf_rmse(path: &str, grid: &mut VoxelGrid, density_only: bool) -> Result<f32> {
     let file = netcdf::open(path)?;
 

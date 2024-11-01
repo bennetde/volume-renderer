@@ -1,6 +1,8 @@
 use image::{flat::SampleLayout, imageops::thumbnail, FlatSamples, Rgba};
 use wgpu::{CommandBuffer, CommandEncoderDescriptor, Device, SurfaceConfiguration, SurfaceTexture};
 
+
+/// Struct used to save the current surface to a buffer, which can then be exported as a PNG file
 pub struct Screenshotter {
     buffer: wgpu::Buffer
 }
@@ -24,6 +26,7 @@ impl Screenshotter {
         }
     }
 
+    // Copies the current surface into the screenshot buffer
     pub fn screenshot(&self, surface: &SurfaceTexture, config: &SurfaceConfiguration, device: &Device) -> CommandBuffer {
         let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor { label: Some("screenshot_command_encoder") });
 
@@ -50,6 +53,7 @@ impl Screenshotter {
         encoder.finish()
     }
 
+    // Save the current screenshot buffer to disk
     pub async fn save_screenshot_to_disk(&self, device: &Device, config: &SurfaceConfiguration, file_name: &str) {
         let buffer_slice = self.buffer.slice(..);
         

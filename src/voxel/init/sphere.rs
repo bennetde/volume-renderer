@@ -2,6 +2,7 @@ use glam::{UVec3, Vec3};
 
 use crate::voxel::grid::VoxelGrid;
 
+/// Initiates the VoxelGrid to contain a Sphere Model
 #[allow(dead_code)]
 pub fn init_grid_buffer_sphere(grid: &mut VoxelGrid, radius: f32) {
     let center = Vec3::new(grid.dimensions.x as f32, grid.dimensions.y as f32, grid.dimensions.z as f32) / 2.0;
