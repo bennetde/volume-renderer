@@ -24,4 +24,4 @@ is needed to run this script. Secondly, a simple script for comparing views with
 across all views.
 
 
-![A screenshot of the program](screenshots/screenshot-2024-07-15%20143013.png)
+![A screenshot of the program](screenshots/screenshot.png)
